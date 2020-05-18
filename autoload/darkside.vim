@@ -7,9 +7,9 @@ let g:loaded_darkside = 1
 let s:cpo_save = &cpo
 set cpo&vim
 
-let s:default_coeff = str2float('0.5')
 let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
-let g:darkside_block = get(g:, 'darkside_block', '')
+let g:darkside_default_coeff = get(g:,'darkside_default_coeff',str2float('0.5'))
+let g:darkside_delimiters = get(g:, 'darkside_delimiters', ['$',0])
 
 
 function! s:hex2rgb(str)
@@ -39,7 +39,7 @@ endfunction
 
 function! s:coeff(coeff)
 	let coeff = a:coeff < 0 ?
-				\ get(g:, 'darkside_default_coefficient', s:default_coeff) : a:coeff
+				\ get(g:, 'darkside_default_coefficient', g:darkside_default_coeff) : a:coeff
 	if coeff < 0 || coeff > 1
 		throw 'Invalid g:darkside_default_coefficient. Expected: 0.0 ~ 1.0'
 	endif
@@ -117,38 +117,29 @@ function! s:clear_hl()
 endfunction
 
 
-function! s:darkside()
-	if empty('g:darkside_block')
+function! s:lighten()
+	if empty('g:darkside_delimiters')
 		return
 	endif
 
-	let curr = [line('.'), line('$')]
-	if curr ==# w:darkside_prev[0 : 1]
-		return
-	endif
-
-	let paragraph = s:getpos()
-	if paragraph ==# w:darkside_prev[2 : 3]
-		return
-	endif
-
-	call s:clear_hl()
-	if g:darkside_focus_mode_only == 0
-		call call('s:hl', paragraph)
-	endif
-	let w:darkside_prev = extend(curr, paragraph)
+	return
 endfunction
 
-function! s:darker()
+function! s:darken(startline,endline)
 	let w:darkside_match_ids = get(w:, 'darkside_match_ids', [])
 	let priority = get(g:, 'darkside_priority', 10)
-	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%>0l', priority))
+	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%<'.a:startline.'l', priority))
+	if a:startline !=# '$' && a:endline > 0
+		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%>'.a:endline.'l', priority))
+	endif
 endfunction
 
-function! s:start(coeff)
+function! s:start()
 	try
-		let s:darkside_coeff = a:coeff > 0 ? s:parse_coeff(a:coeff) : -1
-		call s:dim(s:darkside_coeff)
+		let s:lighten_coeff =
+					\ g:darkside_default_coeff > 0 ?
+					\ s:parse_coeff(g:darkside_default_coeff) : -1
+		call s:dim(s:lighten_coeff)
 	catch
 		return s:error(v:exception)
 	endtry
@@ -157,31 +148,31 @@ function! s:start(coeff)
 	:	let was_on = exists('#darkside#CursorMoved')
 	:	autocmd!
 	:	if was_on
-	:		autocmd CursorMoved,CursorMovedI * call s:darkside()
+	:		autocmd CursorMoved,CursorMovedI * call s:lighten()
 	:	endif
 	:augroup END
 	" FIXME: We cannot safely remove this group once Darkside started
 	:augroup darkside_win_event
 	:	autocmd!
-	:	autocmd WinEnter * call s:stop() | call s:start('g:default_coeff ')
-	:	autocmd WinLeave * call s:darker()
+	:	autocmd WinEnter * call s:reset()
+	:	autocmd WinLeave * call s:darken('$',0)
 	:augroup END
 	doautocmd CursorMoved
-
 endfunction
 
-function! s:stop()
+function! s:reset()
 	call s:clear_hl()
 	:augroup darkside
 	:	autocmd!
 	:augroup END
+	call s:start()
 endfunction
 
-function! darkside#execute(bang,...)
+function! darkside#execute(bang)
 	if a:bang
 		call s:stop()
 	else
-		call s:start (a:0)
+		call s:start()
 	endif
 endfunction
 
