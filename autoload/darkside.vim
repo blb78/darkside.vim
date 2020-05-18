@@ -152,11 +152,11 @@ function! s:stop()
 	augroup END
 endfunction
 
-function! darkside#execute(bang,coeff)
+function! darkside#execute(bang,...)
 	if a:bang
 		call s:stop()
 	else
-		call s:start (a:coeff)
+		call s:start (a:0)
 	endif
 endfunction
 
