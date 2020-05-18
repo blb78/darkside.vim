@@ -110,6 +110,13 @@ function! s:parse_coeff(coeff)
 	return c
 endfunction
 
+function! s:clear_hl()
+	while exists('w:darkside_match_ids') && !empty(w:darkside_match_ids)
+		silent! call matchdelete(remove(w:darkside_match_ids, -1))
+	endwhile
+endfunction
+
+
 function! s:darkside()
 	if empty('g:darkside_block')
 		return
