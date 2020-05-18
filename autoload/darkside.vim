@@ -143,7 +143,7 @@ function! s:start(coeff)
 	augroup darkside
 		let was_on = exists('#darkside#CursorMoved')
 		autocmd!
-		if empty(a:range) || was_on
+		if was_on
 			autocmd CursorMoved,CursorMovedI * call s:darkside()
 		endif
 		doautocmd CursorMoved
