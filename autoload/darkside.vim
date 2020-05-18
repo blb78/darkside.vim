@@ -41,6 +41,7 @@ function! s:coeff(coeff)
 	let coeff = a:coeff < 0 ?
 				\ get(g:, 'darkside_default_coefficient', g:darkside_default_coeff) : a:coeff
 	if coeff < 0 || coeff > 1
+		call s:prompt(coeff)
 		throw 'Invalid g:darkside_default_coefficient. Expected: 0.0 ~ 1.0'
 	endif
 	return coeff
@@ -176,5 +177,10 @@ function! darkside#execute(bang)
 	endif
 endfunction
 
+function! s:prompt(string)
+	call inputsave()
+	let name = input('Enter name: '.a:string)
+	call inputrestore()
+endfunction
 let &cpo = s:cpo_save
 unlet s:cpo_save
