@@ -39,11 +39,17 @@ endfunction
 
 function! s:coeff(coeff)
 	let coeff = a:coeff < 0 ?
-				\ get(g:, 'limelight_default_coefficient', s:default_coeff) : a:coeff
+				\ get(g:, 'darkside_default_coefficient', s:default_coeff) : a:coeff
 	if coeff < 0 || coeff > 1
-		throw 'Invalid g:limelight_default_coefficient. Expected: 0.0 ~ 1.0'
+		throw 'Invalid g:darkside_default_coefficient. Expected: 0.0 ~ 1.0'
 	endif
 	return coeff
+endfunction
+
+function! s:error(msg)
+	echohl ErrorMsg
+	echo a:msg
+	echohl None
 endfunction
 
 function! s:dim(coeff)
@@ -52,8 +58,8 @@ function! s:dim(coeff)
 	let bg = synIDattr(synid, 'bg#')
 
 	if has('gui_running') || has('termguicolors') && &termguicolors || has('nvim') && $NVIM_TUI_ENABLE_TRUE_COLOR
-		if a:coeff < 0 && exists('g:limelight_conceal_guifg')
-			let dim = g:limelight_conceal_guifg
+		if a:coeff < 0 && exists('g:darkside_conceal_guifg')
+			let dim = g:darkside_conceal_guifg
 		elseif empty(fg) || empty(bg)
 			throw s:unsupported()
 		else
@@ -66,10 +72,10 @@ function! s:dim(coeff)
 						\ bg_rgb[2] * coeff + fg_rgb[2] * (1 - coeff)]
 			let dim = '#'.join(map(dim_rgb, 'printf("%x", float2nr(v:val))'), '')
 		endif
-		execute printf('hi LimelightDim guifg=%s guisp=bg', dim)
+		execute printf('hi DarksideDim guifg=%s guisp=bg', dim)
 	elseif &t_Co == 256
-		if a:coeff < 0 && exists('g:limelight_conceal_ctermfg')
-			let dim = g:limelight_conceal_ctermfg
+		if a:coeff < 0 && exists('g:darkside_conceal_ctermfg')
+			let dim = g:darkside_conceal_ctermfg
 		elseif fg <= -1 || bg <= -1
 			throw s:unsupported()
 		else
@@ -79,9 +85,9 @@ function! s:dim(coeff)
 			let dim = s:gray_ansi(float2nr(bg * coeff + fg * (1 - coeff)))
 		endif
 		if type(dim) == 1
-			execute printf('hi LimelightDim ctermfg=%s', dim)
+			execute printf('hi DarksideDim ctermfg=%s', dim)
 		else
-			execute printf('hi LimelightDim ctermfg=%d', dim)
+			execute printf('hi DarksideDim ctermfg=%d', dim)
 		endif
 	else
 		throw 'Unsupported terminal. Sorry.'
@@ -110,32 +116,32 @@ function! s:darkside()
 	endif
 
 	let curr = [line('.'), line('$')]
-	if curr ==# w:limelight_prev[0 : 1]
+	if curr ==# w:darkside_prev[0 : 1]
 		return
 	endif
 
 	let paragraph = s:getpos()
-	if paragraph ==# w:limelight_prev[2 : 3]
+	if paragraph ==# w:darkside_prev[2 : 3]
 		return
 	endif
 
 	call s:clear_hl()
-	if g:limelight_focus_mode_only == 0
+	if g:darkside_focus_mode_only == 0
 		call call('s:hl', paragraph)
 	endif
-	let w:limelight_prev = extend(curr, paragraph)
+	let w:darkside_prev = extend(curr, paragraph)
 endfunction
 
 function! s:start(coeff)
 	try
-		let s:darkside_coeff = a:coeff > 0 ? s:parse_coeff(a:1) : -1
-		call s:dim(s:limelight_coeff)
+		let s:darkside_coeff = a:coeff > 0 ? s:parse_coeff(a:coeff) : -1
+		call s:dim(s:darkside_coeff)
 	catch
 		return s:error(v:exception)
 	endtry
 
 	augroup darkside
-		let was_on = exists('#limelight#CursorMoved')
+		let was_on = exists('#darkside#CursorMoved')
 		autocmd!
 		if empty(a:range) || was_on
 			autocmd CursorMoved,CursorMovedI * call s:darkside()
