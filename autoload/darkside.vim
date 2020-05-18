@@ -132,6 +132,12 @@ function! s:darkside()
 	let w:darkside_prev = extend(curr, paragraph)
 endfunction
 
+function! s:darker()
+	let w:darkside_match_ids = get(w:, 'darkside_match_ids', [])
+	let priority = get(g:, 'darkside_priority', 10)
+	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%>0l', priority))
+endfunction
+
 function! s:start(coeff)
 	try
 		let s:darkside_coeff = a:coeff > 0 ? s:parse_coeff(a:coeff) : -1
@@ -140,22 +146,28 @@ function! s:start(coeff)
 		return s:error(v:exception)
 	endtry
 
-	augroup darkside
-		let was_on = exists('#darkside#CursorMoved')
-		autocmd!
-		if was_on
-			autocmd CursorMoved,CursorMovedI * call s:darkside()
-		endif
-		doautocmd CursorMoved
-	augroup END
+	:augroup darkside
+	:	let was_on = exists('#darkside#CursorMoved')
+	:	autocmd!
+	:	if was_on
+	:		autocmd CursorMoved,CursorMovedI * call s:darkside()
+	:	endif
+	:augroup END
+	" FIXME: We cannot safely remove this group once Darkside started
+	:augroup darkside_win_event
+	:	autocmd!
+	:	autocmd WinEnter * call s:stop() | call s:start('g:default_coeff ')
+	:	autocmd WinLeave * call s:darker()
+	:augroup END
+	doautocmd CursorMoved
 
 endfunction
 
 function! s:stop()
 	call s:clear_hl()
-	augroup darkside
-		autocmd!
-	augroup END
+	:augroup darkside
+	:	autocmd!
+	:augroup END
 endfunction
 
 function! darkside#execute(bang,...)
