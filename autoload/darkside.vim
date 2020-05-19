@@ -1,12 +1,14 @@
 if exists('g:loaded_darkside')
 	finish
 endif
+
 let g:loaded_darkside = 1
 let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
 let s:darkside_coeff = get(g:,'darkside_coeff', 0.5)
-let s:darkside_bop = get(g:, 'darkside_bop', '^\s*$\n\zs')
-let s:darkside_eop = get(g:, 'darkside_eop', '^\s*$')
+let s:darkside_bop = get(g:,'darkside_bop','^\s*$\n\zs')
+let s:darkside_eop = get(g:,'darkside_bop','^\s*$')
 let s:ignored_files = get(g:,'darkside_ignored_files',[])
+let s:special_cases = get(g:,'darkside_special_cases',{})
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -95,9 +97,9 @@ endfunction
 
 function! s:getpos()
 	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
-	let start = searchpos(s:darkside_bop, 'cbW')[0]
+	let start =  has_key(s:special_cases,&ft) ? searchpos(s:special_cases[&ft]['bop'],'cbW')[0] : searchpos(s:darkside_bop, 'cbW')[0]
 	call setpos('.', pos)
-	let end = searchpos(s:darkside_eop, 'W')[0]
+	let end = has_key(s:special_cases,&ft) ?  searchpos(s:special_cases[&ft]['eop'],'W')[0] :searchpos(s:darkside_eop, 'W')[0]
 	call setpos('.', pos)
 	return [start, end]
 endfunction
