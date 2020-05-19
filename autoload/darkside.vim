@@ -3,9 +3,10 @@ if exists('g:loaded_darkside')
 endif
 let g:loaded_darkside = 1
 let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
-let s:darkside_default_coeff = get(g:,'darkside_default_coeff', 0.5)
+let s:darkside_coeff = get(g:,'darkside_coeff', 0.5)
 let s:darkside_bop = get(g:, 'darkside_bop', '^\s*$\n\zs')
 let s:darkside_eop = get(g:, 'darkside_eop', '^\s*$')
+let s:ignored_files = get(g:,'darkside_ignored_files',[])
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -37,9 +38,9 @@ function! s:gray_ansi(col)
 endfunction
 
 function! s:coeff(coeff)
-	let coeff = a:coeff < 0 ? s:darkside_default_coeff : a:coeff
+	let coeff = a:coeff < 0 ? s:darkside_coeff : a:coeff
 	if coeff < 0 || coeff > 1
-		throw 'Invalid g:darkside_default_coefficient. Expected: 0.0 ~ 1.0'
+		throw 'Invalid g:darkside_coefficient. Expected: 0.0 ~ 1.0'
 	endif
 	return coeff
 endfunction
@@ -112,6 +113,10 @@ endfunction
 
 
 function! s:lighten()
+	if index(s:ignored_files,&ft)>=0
+		call s:clear_hl()
+		return
+	endif
 	if !exists('w:darkside_previous_selection')
 		let w:darkside_previous_selection = [0, 0, 0, 0]
 	endif
@@ -142,7 +147,7 @@ endfunction
 
 function! s:start()
 	try
-		call s:dim(s:darkside_default_coeff)
+		call s:dim(s:darkside_coeff)
 	catch
 		return s:error(v:exception)
 	endtry
@@ -151,7 +156,7 @@ function! s:start()
 	:	autocmd!
 	:	autocmd CursorMoved,CursorMovedI * call s:lighten()
 	:	" autocmd ColorScheme * try
-	:	" 			\|   call s:dim(s:darkside_default_coeff)
+	:	" 			\|   call s:dim(s:darkside_coeff)
 	:	" 			\| catch
 	:	" 				\|   call s:stop()
 	:	" 				\|   throw v:exception
