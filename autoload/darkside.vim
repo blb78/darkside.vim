@@ -3,13 +3,13 @@ if exists('g:loaded_darkside')
 	finish
 endif
 let g:loaded_darkside = 1
+let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
+let s:darkside_default_coeff = get(g:,'darkside_default_coeff', 0.5)
+let s:darkside_bop = get(g:, 'darkside_bop', '^\s*$\n\zs')
+let s:darkside_eop = get(g:, 'darkside_eop', '^\s*$')
 
 let s:cpo_save = &cpo
 set cpo&vim
-
-let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
-let g:darkside_default_coeff = get(g:,'darkside_default_coeff',str2float('0.5'))
-let g:darkside_delimiters = get(g:, 'darkside_delimiters', ['$',0])
 
 
 function! s:hex2rgb(str)
@@ -38,10 +38,8 @@ function! s:gray_ansi(col)
 endfunction
 
 function! s:coeff(coeff)
-	let coeff = a:coeff < 0 ?
-				\ get(g:, 'darkside_default_coefficient', g:darkside_default_coeff) : a:coeff
+	let coeff = a:coeff < 0 ? s:darkside_default_coeff : a:coeff
 	if coeff < 0 || coeff > 1
-		call s:prompt(coeff)
 		throw 'Invalid g:darkside_default_coefficient. Expected: 0.0 ~ 1.0'
 	endif
 	return coeff
@@ -95,22 +93,18 @@ function! s:dim(coeff)
 	endif
 endfunction
 
-function! s:parse_coeff(coeff)
-	let t = type(a:coeff)
-	if t == 1
-		if a:coeff =~ '^ *[0-9.]\+ *$'
-			let c = str2float(a:coeff)
-		else
-			throw s:invalid_coefficient
-		endif
-	elseif index([0, 5], t) >= 0
-		let c = t
-	else
-		throw s:invalid_coefficient
-	endif
-	return c
+function! s:getpos()
+	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
+	let start = searchpos(s:darkside_bop, 'cbW')[0]
+	call setpos('.', pos)
+	let end = searchpos(s:darkside_eop, 'W')[0]
+	call setpos('.', pos)
+	return [start, end]
 endfunction
 
+function! s:empty(line)
+	return (a:line =~# '^\s*$')
+endfunction
 function! s:clear_hl()
 	while exists('w:darkside_match_ids') && !empty(w:darkside_match_ids)
 		silent! call matchdelete(remove(w:darkside_match_ids, -1))
@@ -119,54 +113,72 @@ endfunction
 
 
 function! s:lighten()
-	if empty('g:darkside_delimiters')
+	if !exists('w:darkside_previous_selection')
+		let w:darkside_previous_selection = [0, 0, 0, 0]
+	endif
+
+	let curr = [line('.'), line('$')]
+	if curr ==# w:darkside_previous_selection[0 : 1]
 		return
 	endif
 
-	return
+	let paragraph = s:getpos()
+	if paragraph ==# w:darkside_previous_selection[2 : 3]
+		return
+	endif
+
+	call s:clear_hl()
+	call call('s:darken', paragraph)
+	let w:darkside_previous_selection = extend(curr, paragraph)
 endfunction
 
 function! s:darken(startline,endline)
 	let w:darkside_match_ids = get(w:, 'darkside_match_ids', [])
 	let priority = get(g:, 'darkside_priority', 10)
-	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%<'.a:startline.'l', priority))
-	if a:startline !=# '$' && a:endline > 0
-		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%>'.a:endline.'l', priority))
+	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%<'.a:startline .'l', priority))
+	if a:endline > 0
+		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%>'.a:endline .'l', priority))
 	endif
 endfunction
 
 function! s:start()
 	try
-		let s:lighten_coeff =
-					\ g:darkside_default_coeff > 0 ?
-					\ s:parse_coeff(g:darkside_default_coeff) : -1
-		call s:dim(s:lighten_coeff)
+		call s:dim(s:darkside_default_coeff)
 	catch
 		return s:error(v:exception)
 	endtry
 
 	:augroup darkside
-	:	let was_on = exists('#darkside#CursorMoved')
 	:	autocmd!
-	:	if was_on
-	:		autocmd CursorMoved,CursorMovedI * call s:lighten()
-	:	endif
+	:	autocmd CursorMoved,CursorMovedI * call s:lighten()
+	:	" autocmd ColorScheme * try
+	:	" 			\|   call s:dim(s:darkside_default_coeff)
+	:	" 			\| catch
+	:	" 				\|   call s:stop()
+	:	" 				\|   throw v:exception
+	:	" 				\| endtry
 	:augroup END
 	" FIXME: We cannot safely remove this group once Darkside started
 	:augroup darkside_win_event
 	:	autocmd!
 	:	autocmd WinEnter * call s:reset()
-	:	autocmd WinLeave * call s:darken('$',0)
+	:	autocmd WinLeave * call s:darken(0,0)
 	:augroup END
 	doautocmd CursorMoved
 endfunction
 
 function! s:reset()
+	call s:stop()
+	call s:start()
+endfunction
+
+function! s:stop()
 	call s:clear_hl()
 	:augroup darkside
 	:	autocmd!
 	:augroup END
-	call s:start()
+	augroup! darkside
+	unlet! w:darkside_previous_selection w:darkside_match_ids
 endfunction
 
 function! darkside#execute(bang)
