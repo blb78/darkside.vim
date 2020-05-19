@@ -1,4 +1,3 @@
-
 if exists('g:loaded_darkside')
 	finish
 endif
@@ -162,7 +161,7 @@ function! s:start()
 	:augroup darkside_win_event
 	:	autocmd!
 	:	autocmd WinEnter * call s:reset()
-	:	autocmd WinLeave * call s:darken(0,0)
+	:	autocmd WinLeave * call s:darken(line('$'),0)
 	:augroup END
 	doautocmd CursorMoved
 endfunction
