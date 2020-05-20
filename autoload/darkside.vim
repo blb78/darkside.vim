@@ -5,9 +5,9 @@ endif
 let g:loaded_darkside = 1
 let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
 let s:darkside_coeff = get(g:,'darkside_coeff', 0.5)
-let s:darkside_bop = get(g:,'darkside_bop','^\s*$\n\zs')
-let s:darkside_eop = get(g:,'darkside_bop','^\s*$')
-let s:ignored_files = get(g:,'darkside_ignored_files',[])
+let s:bop = get(g:,'darkside_bop','^\s*$\n\zs')
+let s:eop = get(g:,'darkside_eop','^\s*$')
+let s:blacklist = get(g:,'darkside_blacklist',[])
 let s:special_cases = get(g:,'darkside_special_cases',{})
 
 let s:cpo_save = &cpo
@@ -97,9 +97,9 @@ endfunction
 
 function! s:getpos()
 	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
-	let start =  has_key(s:special_cases,&ft) ? searchpos(s:special_cases[&ft]['bop'],'cbW')[0] : searchpos(s:darkside_bop, 'cbW')[0]
+	let start =  has_key(s:special_cases,&ft) ? searchpos(s:special_cases[&ft]['bop'],'cbW')[0] : searchpos(s:bop, 'cbW')[0]
 	call setpos('.', pos)
-	let end = has_key(s:special_cases,&ft) ?  searchpos(s:special_cases[&ft]['eop'],'W')[0] :searchpos(s:darkside_eop, 'W')[0]
+	let end = has_key(s:special_cases,&ft) ?  searchpos(s:special_cases[&ft]['eop'],'W')[0] :searchpos(s:eop, 'W')[0]
 	call setpos('.', pos)
 	return [start, end]
 endfunction
@@ -115,7 +115,7 @@ endfunction
 
 
 function! s:lighten()
-	if index(s:ignored_files,&ft)>=0
+	if index(s:blacklist,&ft)>=0
 		call s:clear_hl()
 		return
 	endif
@@ -147,6 +147,15 @@ function! s:darken(startline,endline)
 	endif
 endfunction
 
+function! s:darksideHL()
+	try
+		call s:dim(s:darkside_coeff)
+	catch
+		call s:stop()
+		throw v:exception
+	endtry
+endfunction
+
 function! s:start()
 	try
 		call s:dim(s:darkside_coeff)
@@ -157,12 +166,7 @@ function! s:start()
 	:augroup darkside
 	:	autocmd!
 	:	autocmd CursorMoved,CursorMovedI * call s:lighten()
-	:	" autocmd ColorScheme * try
-	:	" 			\|   call s:dim(s:darkside_coeff)
-	:	" 			\| catch
-	:	" 				\|   call s:stop()
-	:	" 				\|   throw v:exception
-	:	" 				\| endtry
+	:	autocmd ColorScheme * call s:darksideHL()
 	:augroup END
 	" FIXME: We cannot safely remove this group once Darkside started
 	:augroup darkside_win_event
