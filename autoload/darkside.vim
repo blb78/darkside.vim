@@ -9,7 +9,7 @@ let s:lightside_start = get(g:,'darkside_lightside_start','^\s*$\n\zs')
 let s:lightside_end = get(g:,'darkside_lightside_end','^\s*$')
 let s:blacklist = get(g:,'darkside_blacklist',[])
 let s:special_cases = get(g:,'darkside_special_cases',{})
-let s:options = get(g:,'darkside_options',{'motion':'sentence'})
+let s:options = get(g:,'darkside_options',{'motion':'section'})
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -100,12 +100,28 @@ function! s:byMotion()
 	return has_key(s:options,'motion')
 endfunction
 
-function s:findSentence()
-	normal! (
+function s:findSection()
+	normal! l[[
 	let b = exists('*getcurpos')? getcurpos() : getpos('.')
-	normal! )
+	normal! ]]h
 	let e = exists('*getcurpos')? getcurpos() : getpos('.')
-	return [b[1],b[2],e[1],e[2]-1]
+	return [b[1],b[2],e[1],e[2]]
+endfunction
+
+function s:findParagraph()
+	normal! l{
+	let b = exists('*getcurpos')? getcurpos() : getpos('.')
+	normal! }h
+	let e = exists('*getcurpos')? getcurpos() : getpos('.')
+	return [b[1],b[2],e[1],e[2]]
+endfunction
+
+function s:findSentence()
+	normal! l(
+	let b = exists('*getcurpos')? getcurpos() : getpos('.')
+	normal! )h
+	let e = exists('*getcurpos')? getcurpos() : getpos('.')
+	return [b[1],b[2],e[1],e[2]]
 endfunction
 
 function! s:define()
@@ -116,6 +132,10 @@ function! s:define()
 	if s:byMotion()
 		if s:options.motion ==# 'sentence'
 			let s:position = s:findSentence()
+		elseif s:options.motion ==# 'paragraph'
+			let s:position = s:findParagraph()
+		else
+			let s:position = s:findSection()
 		endif
 	else
 		" s:start =  has_key(s:special_cases,&ft) ? searchpos(s:special_cases[&ft]['lightside_start'],'ncpb') : searchpos(s:lightside_start, 'cbW')
@@ -136,13 +156,15 @@ function! s:clear_hl()
 	endwhile
 endfunction
 
-function s:useless()
-	let curr_pos = exists('*getcurpos')? getcurpos() : getpos('.')
-	let current = str2nr(curr_pos[1].curr_pos[2])
-	let l:start = str2nr(w:selection[0].w:selection[1])
-	let l:end = str2nr(w:selection[2].w:selection[3])
-	if current > l:start && current < l:end
-		return 1
+function s:skip()
+	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
+	let cursor = {'lnum':pos[1],'col':pos[2]}
+	let l:lightside = {'start':{'lnum':w:selection[0],'col':w:selection[1]},'end':{'lnum':w:selection[2],'col':w:selection[3]}}
+	if cursor.lnum >= l:lightside.start.lnum && cursor.lnum <= l:lightside.end.lnum
+		if s:options.motion !=# 'sentence' | return 1 | endif
+		if cursor.col >= l:lightside.start.col && cursor.col<= l:lightside.end.col
+			return 1
+		endif
 	endif
 	return 0
 endfunction
@@ -157,7 +179,7 @@ function! s:lighten()
 		let w:selection = [0, 0, 0, 0]
 	endif
 
-	if exists('s:lightside') && s:useless()
+	if exists('s:lightside') && s:skip()
 		return
 	endif
 
@@ -180,9 +202,11 @@ function! s:darkenAround(startline,startcol,endline,endcol)
 	let w:darkside_match_ids = get(w:, 'darkside_match_ids', [])
 	let priority = get(g:, 'darkside_priority', 10)
 	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%<'.a:startline .'l', priority))
-	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%'.a:startline .'l\%<'.a:startcol.'c', priority))
 	if a:endline > 0
 		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%>'.a:endline .'l', priority))
+	endif
+	if s:options.motion ==# 'sentence'
+		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%'.a:startline .'l\%<'.a:startcol.'c', priority))
 		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%'.a:endline .'l\%>'.a:endcol.'c', priority))
 	endif
 endfunction
