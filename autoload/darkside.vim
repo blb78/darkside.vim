@@ -5,10 +5,10 @@ endif
 let g:loaded_darkside = 1
 let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
 let s:darkside_coeff = get(g:,'darkside_coeff', 0.5)
-let s:bop = get(g:,'darkside_bop','^\s*$\n\zs')
-let s:eop = get(g:,'darkside_eop','^\s*$')
+let s:lightside_start = get(g:,'darkside_lightside_start','^\s*$\n\zs')
+let s:lightside_end = get(g:,'darkside_lightside_end','^\s*$')
 let s:blacklist = get(g:,'darkside_blacklist',[])
-let s:special_cases = get(g:,'darkside_special_cases',{})
+let s:options = get(g:,'darkside_options',{})
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -97,9 +97,9 @@ endfunction
 
 function! s:getpos()
 	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
-	let start =  has_key(s:special_cases,&ft) ? searchpos(s:special_cases[&ft]['bop'],'cbW')[0] : searchpos(s:bop, 'cbW')[0]
+	let start =  has_key(s:options,&ft) ? searchpos(s:options[&ft]['lightside_start'],'cbW')[0] : searchpos(s:lightside_start, 'cbW')[0]
 	call setpos('.', pos)
-	let end = has_key(s:special_cases,&ft) ?  searchpos(s:special_cases[&ft]['eop'],'W')[0] :searchpos(s:eop, 'W')[0]
+	let end = has_key(s:options,&ft) ?  searchpos(s:options[&ft]['lightside_end'],'W')[0] :searchpos(s:lightside_end, 'W')[0]
 	call setpos('.', pos)
 	return [start, end]
 endfunction
