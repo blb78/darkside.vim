@@ -97,11 +97,12 @@ endfunction
 
 function! s:getpos()
 	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
-	let start =  has_key(s:options,&ft) ? searchpos(s:options[&ft]['lightside_start'],'cbW')[0] : searchpos(s:lightside_start, 'cbW')[0]
+	let start =  has_key(s:options,&ft) ? searchpos(s:options[&ft]['lightside_start'],'cbW') : searchpos(s:lightside_start, 'cbW')[0]
+	" call s:prompt(join(start,'-'))
 	call setpos('.', pos)
-	let end = has_key(s:options,&ft) ?  searchpos(s:options[&ft]['lightside_end'],'W')[0] :searchpos(s:lightside_end, 'W')[0]
+	let end = has_key(s:options,&ft) ?  searchpos(s:options[&ft]['lightside_end'],'W') :searchpos(s:lightside_end, 'W')[0]
 	call setpos('.', pos)
-	return [start, end]
+	return [start[0], end[0]]
 endfunction
 
 function! s:empty(line)
@@ -152,7 +153,7 @@ function! s:darksideHL()
 		call s:dim(s:darkside_coeff)
 	catch
 		call s:stop()
-		throw v:exception
+		return s:error(v:exception)
 	endtry
 endfunction
 
