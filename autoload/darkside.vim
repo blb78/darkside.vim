@@ -136,7 +136,6 @@ function! s:highlighting()
 
 	call s:clear_hl()
 	call call('s:lowering', paragraph)
-	" call s:prompt(join(w:darkside_match_ids,'-'))
 	let w:darkside_previous_selection = extend(curr, paragraph)
 endfunction
 
@@ -171,6 +170,7 @@ function! s:start()
 	:augroup darkside_win_event
 	:	autocmd!
 	:	autocmd WinEnter * call s:reset()
+	:	autocmd TermEnter * call s:stop()
 	:	autocmd WinLeave * call s:lowering(line('$'),0,0,0)
 	:augroup END
 	doautocmd CursorMoved
