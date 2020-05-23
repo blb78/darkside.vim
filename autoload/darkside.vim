@@ -98,11 +98,10 @@ endfunction
 function! s:getpos()
 	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
 	let start =  has_key(s:options,&ft) ? searchpos(s:options[&ft]['lightside_start'],'cbW') : searchpos(s:lightside_start, 'cbW')
-	" call s:prompt(join(start,'-'))
-	call setpos('.', pos)
+	" call setpos('.', pos)
 	let end = has_key(s:options,&ft) ?  searchpos(s:options[&ft]['lightside_end'],'W') :searchpos(s:lightside_end, 'W')
 	call setpos('.', pos)
-	return [start[0], end[0]]
+	return [start[0], start[1],end[0],end[1]]
 endfunction
 
 function! s:empty(line)
@@ -115,7 +114,7 @@ function! s:clear_hl()
 endfunction
 
 
-function! s:lighten()
+function! s:highlighting()
 	if index(s:blacklist,&ft)>=0
 		call s:clear_hl()
 		return
@@ -130,21 +129,25 @@ function! s:lighten()
 	endif
 
 	let paragraph = s:getpos()
-	if paragraph ==# w:darkside_previous_selection[2 : 3]
+	" call s:prompt(join(paragraph,'-'))
+	if paragraph ==# w:darkside_previous_selection[2 : 5]
 		return
 	endif
 
 	call s:clear_hl()
-	call call('s:darken', paragraph)
+	call call('s:lowering', paragraph)
+	" call s:prompt(join(w:darkside_match_ids,'-'))
 	let w:darkside_previous_selection = extend(curr, paragraph)
 endfunction
 
-function! s:darken(startline,endline)
+function! s:lowering(start_lnum,start_col,end_lnum,end_col)
 	let w:darkside_match_ids = get(w:, 'darkside_match_ids', [])
 	let priority = get(g:, 'darkside_priority', 10)
-	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%<'.a:startline .'l', priority))
-	if a:endline > 0
-		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%>'.a:endline .'l', priority))
+	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%<'.a:start_lnum .'l', priority))
+	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%'.a:start_lnum .'l\%<'.a:start_col.'c', priority))
+	if a:end_lnum > 0
+		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%>'.a:end_lnum.'l', priority))
+		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%'.a:end_lnum.'l\%>'.a:end_col.'c', priority))
 	endif
 endfunction
 
@@ -161,14 +164,14 @@ function! s:start()
 	call s:createHighlight()
 	:augroup darkside
 	:	autocmd!
-	:	autocmd CursorMoved,CursorMovedI * call s:lighten()
+	:	autocmd CursorMoved,CursorMovedI * call s:highlighting()
 	:	autocmd ColorScheme * call s:createHighlight()
 	:augroup END
 	" FIXME: We cannot safely remove this group once Darkside started
 	:augroup darkside_win_event
 	:	autocmd!
 	:	autocmd WinEnter * call s:reset()
-	:	autocmd WinLeave * call s:darken(line('$'),0)
+	:	autocmd WinLeave * call s:lowering(line('$'),0,0,0)
 	:augroup END
 	doautocmd CursorMoved
 endfunction
