@@ -53,7 +53,7 @@ function! s:error(msg)
 	echohl None
 endfunction
 
-function! s:dim(coeff)
+function! s:createGroup(coeff)
 	let synid = synIDtrans(hlID('Normal'))
 	let fg = synIDattr(synid, 'fg#')
 	let bg = synIDattr(synid, 'bg#')
@@ -97,10 +97,10 @@ endfunction
 
 function! s:getpos()
 	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
-	let start =  has_key(s:options,&ft) ? searchpos(s:options[&ft]['lightside_start'],'cbW') : searchpos(s:lightside_start, 'cbW')[0]
+	let start =  has_key(s:options,&ft) ? searchpos(s:options[&ft]['lightside_start'],'cbW') : searchpos(s:lightside_start, 'cbW')
 	" call s:prompt(join(start,'-'))
 	call setpos('.', pos)
-	let end = has_key(s:options,&ft) ?  searchpos(s:options[&ft]['lightside_end'],'W') :searchpos(s:lightside_end, 'W')[0]
+	let end = has_key(s:options,&ft) ?  searchpos(s:options[&ft]['lightside_end'],'W') :searchpos(s:lightside_end, 'W')
 	call setpos('.', pos)
 	return [start[0], end[0]]
 endfunction
@@ -148,9 +148,9 @@ function! s:darken(startline,endline)
 	endif
 endfunction
 
-function! s:darksideHL()
+function! s:createHighlight()
 	try
-		call s:dim(s:darkside_coeff)
+		call s:createGroup(s:darkside_coeff)
 	catch
 		call s:stop()
 		return s:error(v:exception)
@@ -158,16 +158,11 @@ function! s:darksideHL()
 endfunction
 
 function! s:start()
-	try
-		call s:dim(s:darkside_coeff)
-	catch
-		return s:error(v:exception)
-	endtry
-
+	call s:createHighlight()
 	:augroup darkside
 	:	autocmd!
 	:	autocmd CursorMoved,CursorMovedI * call s:lighten()
-	:	autocmd ColorScheme * call s:darksideHL()
+	:	autocmd ColorScheme * call s:createHighlight()
 	:augroup END
 	" FIXME: We cannot safely remove this group once Darkside started
 	:augroup darkside_win_event
