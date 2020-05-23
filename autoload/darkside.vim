@@ -135,11 +135,11 @@ function! s:highlighting()
 	endif
 
 	call s:clear_hl()
-	call call('s:lowering', paragraph)
+	call call('s:graying', paragraph)
 	let w:darkside_previous_selection = extend(curr, paragraph)
 endfunction
 
-function! s:lowering(start_lnum,start_col,end_lnum,end_col)
+function! s:graying(start_lnum,start_col,end_lnum,end_col)
 	let w:darkside_match_ids = get(w:, 'darkside_match_ids', [])
 	let priority = get(g:, 'darkside_priority', 10)
 	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%<'.a:start_lnum .'l', priority))
@@ -170,8 +170,9 @@ function! s:start()
 	:augroup darkside_win_event
 	:	autocmd!
 	:	autocmd WinEnter * call s:reset()
+	:	" FIXME: TermEnter is trigger when running fzf, but WinEnter too
 	:	autocmd TermEnter * call s:stop()
-	:	autocmd WinLeave * call s:lowering(line('$'),0,0,0)
+	:	autocmd WinLeave * call s:graying(line('$'),0,0,0)
 	:augroup END
 	doautocmd CursorMoved
 endfunction
