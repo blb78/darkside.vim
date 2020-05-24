@@ -165,10 +165,10 @@ function s:userSettings()
 			endif
 		endfor
 	endif
+	call s:createHighlight()
 endfunction
 
 function! s:start()
-	call s:createHighlight()
 	call s:userSettings()
 	:augroup darkside
 	:	autocmd!
