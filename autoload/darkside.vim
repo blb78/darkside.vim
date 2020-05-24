@@ -8,8 +8,8 @@ let s:darkside_coeff = get(g:,'darkside_coeff', 0.5)
 let s:lightside_start = get(g:,'darkside_lightside_start','^\s*$\n\zs')
 let s:lightside_end = get(g:,'darkside_lightside_end','^\s*$')
 let s:blacklist = get(g:,'darkside_blacklist',[])
-let s:special_cases = get(g:,'darkside_special_cases',{})
-let s:options = get(g:,'darkside_options',{'motion':'sentence'})
+let s:filetypes = get(g:,'darkside_filetypes',{})
+let s:groups = get(g:,'darkside_groups',{})
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -96,34 +96,12 @@ function! s:createGroup(coeff)
 	endif
 endfunction
 
-function! s:byMotion()
-	return has_key(s:options,'motion')
-endfunction
-
-function s:findSentence()
-	normal! (
-	let b = exists('*getcurpos')? getcurpos() : getpos('.')
-	normal! )
-	let e = exists('*getcurpos')? getcurpos() : getpos('.')
-	return [b[1],b[2],e[1],e[2]-1]
-endfunction
-
-function! s:define()
-	let s:pos = exists('*getcurpos')? getcurpos() : getpos('.')
-	let s:position =[line('1'),1,line('$'),1]
-	"let xy = string(pos[1].' '.pos[2])
-	"call s:prompt(xy)
-	if s:byMotion()
-		if s:options.motion ==# 'sentence'
-			let s:position = s:findSentence()
-		endif
-	else
-		" s:start =  has_key(s:special_cases,&ft) ? searchpos(s:special_cases[&ft]['lightside_start'],'ncpb') : searchpos(s:lightside_start, 'cbW')
-		" call setpos('.', pos)
-		" s:end = has_key(s:special_cases,&ft) ?  searchpos(s:special_cases[&ft]['lightside_end'],'W') :searchpos(s:lightside_end, 'W')
-	endif
-	call setpos('.', s:pos)
-	return s:position
+function! s:getpos()
+	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
+	let start =  searchpos(s:lightside_start, 'cbW')
+	let end = searchpos(s:lightside_end, 'W')
+	call setpos('.', pos)
+	return [start[0], start[1],end[0],end[1]]
 endfunction
 
 function! s:empty(line)
@@ -147,17 +125,17 @@ function s:useless()
 	return 0
 endfunction
 
-function! s:lighten()
+function! s:highlighting()
 	if index(s:blacklist,&ft)>=0
 		call s:clear_hl()
 		return
 	endif
-
 	if !exists('w:selection')
 		let w:selection = [0, 0, 0, 0]
 	endif
 
-	if exists('s:lightside') && s:useless()
+	let paragraph = s:getpos()
+	if paragraph ==# w:selection
 		return
 	endif
 
@@ -172,42 +150,59 @@ function! s:lighten()
 	" endif
 
 	call s:clear_hl()
-	call call('s:darkenAround', s:lightside)
-	let w:selection = s:lightside
+	call call('s:graying', paragraph)
+	let w:selection = paragraph
 endfunction
 
-function! s:darkenAround(startline,startcol,endline,endcol)
+function! s:graying(start_lnum,start_col,end_lnum,end_col)
 	let w:darkside_match_ids = get(w:, 'darkside_match_ids', [])
 	let priority = get(g:, 'darkside_priority', 10)
-	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%<'.a:startline .'l', priority))
-	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%'.a:startline .'l\%<'.a:startcol.'c', priority))
-	if a:endline > 0
-		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%>'.a:endline .'l', priority))
-		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%'.a:endline .'l\%>'.a:endcol.'c', priority))
+	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%<'.a:start_lnum .'l', priority))
+	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%'.a:start_lnum .'l\%<'.a:start_col.'c', priority))
+	if a:end_lnum > 0
+		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%>'.a:end_lnum.'l', priority))
+		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%'.a:end_lnum.'l\%>'.a:end_col.'c', priority))
 	endif
 endfunction
 
-function! s:highlightGroup()
+function! s:createHighlight()
 	try
 		call s:createGroup(s:darkside_coeff)
 	catch
 		call s:stop()
-		return s:error( v:exception)
+		return s:error(v:exception)
 	endtry
 endfunction
 
+function s:userSettings()
+	if has_key(s:filetypes,&ft)
+		let s:lightside_start =  s:filetypes[&ft]['lightside_start']
+		let s:lightside_end =  s:filetypes[&ft]['lightside_end']
+	else
+		for key in keys(s:groups)
+			if index(s:groups[key]['filetype'],&ft)>=0
+				let s:lightside_start =  s:groups[key]['lightside_start']
+				let s:lightside_end =  s:groups[key]['lightside_end']
+			endif
+		endfor
+	endif
+endfunction
+
 function! s:start()
-	call s:highlightGroup()
+	call s:createHighlight()
+	call s:userSettings()
 	:augroup darkside
 	:	autocmd!
-	:	autocmd CursorMoved,CursorMovedI * call s:lighten()
-	:	autocmd ColorScheme * call s:highlightGroup()
+	:	autocmd CursorMoved,CursorMovedI * call s:highlighting()
+	:	autocmd ColorScheme * call s:createHighlight()
 	:augroup END
 	" FIXME: We cannot safely remove this group once Darkside started
 	:augroup darkside_win_event
 	:	autocmd!
 	:	autocmd WinEnter * call s:reset()
-	:	autocmd WinLeave * call s:darken(line('$'),0)
+	:	" FIXME: TermEnter is trigger when running fzf, but WinEnter too
+	:	autocmd TermEnter * call s:stop()
+	:	autocmd WinLeave * call s:graying(line('$'),0,0,0)
 	:augroup END
 	doautocmd CursorMoved
 endfunction
