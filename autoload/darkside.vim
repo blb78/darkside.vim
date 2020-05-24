@@ -97,9 +97,8 @@ endfunction
 
 function! s:getpos()
 	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
-	let start =  has_key(s:options,&ft) ? searchpos(s:options[&ft]['lightside_start'],'cbW') : searchpos(s:lightside_start, 'cbW')
-	" call setpos('.', pos)
-	let end = has_key(s:options,&ft) ?  searchpos(s:options[&ft]['lightside_end'],'W') :searchpos(s:lightside_end, 'W')
+	let start =  searchpos(s:lightside_start, 'cbW')
+	let end = searchpos(s:lightside_end, 'W')
 	call setpos('.', pos)
 	return [start[0], start[1],end[0],end[1]]
 endfunction
@@ -119,24 +118,23 @@ function! s:highlighting()
 		call s:clear_hl()
 		return
 	endif
-	if !exists('w:darkside_previous_selection')
-		let w:darkside_previous_selection = [0, 0, 0, 0]
+	if !exists('w:selection')
+		let w:selection = [0, 0, 0, 0]
 	endif
 
-	let curr = [line('.'), line('$')]
-	if curr ==# w:darkside_previous_selection[0 : 1]
-		return
-	endif
+	" let curr = [line('.'), line('$')]
+	" if curr ==# w:selection[0 : 1]
+	" 	return
+	" endif
 
 	let paragraph = s:getpos()
-	" call s:prompt(join(paragraph,'-'))
-	if paragraph ==# w:darkside_previous_selection[2 : 5]
+	if paragraph ==# w:selection
 		return
 	endif
 
 	call s:clear_hl()
 	call call('s:graying', paragraph)
-	let w:darkside_previous_selection = extend(curr, paragraph)
+	let w:selection = paragraph
 endfunction
 
 function! s:graying(start_lnum,start_col,end_lnum,end_col)
@@ -159,8 +157,16 @@ function! s:createHighlight()
 	endtry
 endfunction
 
+function s:setLightside()
+	if has_key(s:options,&ft)
+		let s:lightside_start =  s:options[&ft]['lightside_start']
+		let s:lightside_end =  s:options[&ft]['lightside_end']
+	endif
+endfunction
+
 function! s:start()
 	call s:createHighlight()
+	call s:setLightside()
 	:augroup darkside
 	:	autocmd!
 	:	autocmd CursorMoved,CursorMovedI * call s:highlighting()
@@ -188,7 +194,7 @@ function! s:stop()
 	:	autocmd!
 	:augroup END
 	augroup! darkside
-	unlet! w:darkside_previous_selection w:darkside_match_ids
+	unlet! w:selection w:darkside_match_ids
 endfunction
 
 function! darkside#execute(bang)
