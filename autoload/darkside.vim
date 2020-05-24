@@ -122,11 +122,6 @@ function! s:highlighting()
 		let w:selection = [0, 0, 0, 0]
 	endif
 
-	" let curr = [line('.'), line('$')]
-	" if curr ==# w:selection[0 : 1]
-	" 	return
-	" endif
-
 	let paragraph = s:getpos()
 	if paragraph ==# w:selection
 		return
