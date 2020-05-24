@@ -40,12 +40,12 @@ function! s:gray_ansi(col)
 	return a:col == 231 ? 0 : (a:col == 256 ? 231 : a:col)
 endfunction
 
-function! s:coeff(coeff)
+function! s:validate(coeff)
 	let coeff = a:coeff < 0 ? s:darkside_coeff : a:coeff
 	if coeff < 0 || coeff > 1
-		throw 'Invalid g:darkside_coefficient. Expected: 0.0 ~ 1.0'
+		return 0
 	endif
-	return coeff
+	return 1
 endfunction
 
 function! s:error(msg)
@@ -58,6 +58,7 @@ function! s:createGroup(coeff)
 	let synid = synIDtrans(hlID('Normal'))
 	let fg = synIDattr(synid, 'fg#')
 	let bg = synIDattr(synid, 'bg#')
+	" call s:prompt(fg.' '.bg)
 
 	if has('gui_running') || has('termguicolors') && &termguicolors || has('nvim') && $NVIM_TUI_ENABLE_TRUE_COLOR
 		if a:coeff < 0 && exists('g:darkside_conceal_guifg')
@@ -65,13 +66,13 @@ function! s:createGroup(coeff)
 		elseif empty(fg) || empty(bg)
 			throw s:unsupported()
 		else
-			let coeff = s:coeff(a:coeff)
+			if !s:validate(a:coeff)| throw 'Invalid g:darkside_coefficient. Expected: 0.0 ~ 1.0' | endif
 			let fg_rgb = s:hex2rgb(fg)
 			let bg_rgb = s:hex2rgb(bg)
 			let dim_rgb = [
-						\ bg_rgb[0] * coeff + fg_rgb[0] * (1 - coeff),
-						\ bg_rgb[1] * coeff + fg_rgb[1] * (1 - coeff),
-						\ bg_rgb[2] * coeff + fg_rgb[2] * (1 - coeff)]
+						\ bg_rgb[0] * a:coeff + fg_rgb[0] * (1 - a:coeff),
+						\ bg_rgb[1] * a:coeff + fg_rgb[1] * (1 - a:coeff),
+						\ bg_rgb[2] * a:coeff + fg_rgb[2] * (1 - a:coeff)]
 			let dim = '#'.join(map(dim_rgb, 'printf("%x", float2nr(v:val))'), '')
 		endif
 		execute printf('hi DarksideDim guifg=%s guisp=bg', dim)
@@ -81,10 +82,10 @@ function! s:createGroup(coeff)
 		elseif fg <= -1 || bg <= -1
 			throw s:unsupported()
 		else
-			let coeff = s:coeff(a:coeff)
+			if !s:validate(a:coeff)| throw 'Invalid g:darkside_coefficient. Expected: 0.0 ~ 1.0' | endif
 			let fg = s:gray_contiguous(fg)
 			let bg = s:gray_contiguous(bg)
-			let dim = s:gray_ansi(float2nr(bg * coeff + fg * (1 - coeff)))
+			let dim = s:gray_ansi(float2nr(bg * a:coeff + fg * (1 - a:coeff)))
 		endif
 		if type(dim) == 1
 			execute printf('hi DarksideDim ctermfg=%s', dim)
@@ -114,17 +115,6 @@ function! s:clear_hl()
 	endwhile
 endfunction
 
-function s:useless()
-	let curr_pos = exists('*getcurpos')? getcurpos() : getpos('.')
-	let current = str2nr(curr_pos[1].curr_pos[2])
-	let l:start = str2nr(w:selection[0].w:selection[1])
-	let l:end = str2nr(w:selection[2].w:selection[3])
-	if current > l:start && current < l:end
-		return 1
-	endif
-	return 0
-endfunction
-
 function! s:highlighting()
 	if index(s:blacklist,&ft)>=0
 		call s:clear_hl()
@@ -138,16 +128,6 @@ function! s:highlighting()
 	if paragraph ==# w:selection
 		return
 	endif
-
-	" let curr = [line('.'), line('$')]
-	" if curr ==# w:selection[0 : 1]
-	" 	return
-	" endif
-
-	let s:lightside = s:define()
-	" if s:lightside ==# w:selection[2 : 3]
-	" 	return
-	" endif
 
 	call s:clear_hl()
 	call call('s:graying', paragraph)
@@ -174,10 +154,11 @@ function! s:createHighlight()
 	endtry
 endfunction
 
-function s:userSettings()
+function s:applySettings()
 	if has_key(s:filetypes,&ft)
 		let s:lightside_start =  s:filetypes[&ft]['lightside_start']
 		let s:lightside_end =  s:filetypes[&ft]['lightside_end']
+	" Not sure about this else ...
 	else
 		for key in keys(s:groups)
 			if index(s:groups[key]['filetype'],&ft)>=0
@@ -186,11 +167,11 @@ function s:userSettings()
 			endif
 		endfor
 	endif
-	call s:createHighlight()
 endfunction
 
 function! s:start()
-	call s:userSettings()
+	call s:applySettings()
+	call s:createHighlight()
 	:augroup darkside
 	:	autocmd!
 	:	autocmd CursorMoved,CursorMovedI * call s:highlighting()
