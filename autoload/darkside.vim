@@ -8,7 +8,8 @@ let s:darkside_coeff = get(g:,'darkside_coeff', 0.5)
 let s:lightside_start = get(g:,'darkside_lightside_start','^\s*$\n\zs')
 let s:lightside_end = get(g:,'darkside_lightside_end','^\s*$')
 let s:blacklist = get(g:,'darkside_blacklist',[])
-let s:options = get(g:,'darkside_options',{})
+let s:filetypes = get(g:,'darkside_filetypes',{})
+let s:groups = get(g:,'darkside_groups',{})
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -152,16 +153,23 @@ function! s:createHighlight()
 	endtry
 endfunction
 
-function s:setLightside()
-	if has_key(s:options,&ft)
-		let s:lightside_start =  s:options[&ft]['lightside_start']
-		let s:lightside_end =  s:options[&ft]['lightside_end']
+function s:userSettings()
+	if has_key(s:filetypes,&ft)
+		let s:lightside_start =  s:filetypes[&ft]['lightside_start']
+		let s:lightside_end =  s:filetypes[&ft]['lightside_end']
+	else
+		for key in keys(s:groups)
+			if index(s:groups[key]['filetype'],&ft)>=0
+				let s:lightside_start =  s:groups[key]['lightside_start']
+				let s:lightside_end =  s:groups[key]['lightside_end']
+			endif
+		endfor
 	endif
 endfunction
 
 function! s:start()
 	call s:createHighlight()
-	call s:setLightside()
+	call s:userSettings()
 	:augroup darkside
 	:	autocmd!
 	:	autocmd CursorMoved,CursorMovedI * call s:highlighting()
