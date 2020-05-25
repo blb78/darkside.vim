@@ -4,9 +4,12 @@ endif
 
 let g:loaded_darkside = 1
 let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
-let s:darkside_coeff = get(g:,'darkside_coeff', 0.5)
-let s:lightside_start = get(g:,'darkside_lightside_start','^\s*$\n\zs')
-let s:lightside_end = get(g:,'darkside_lightside_end','^\s*$')
+let s:default_coeff = get(g:,'darkside_coeff', 0.7)
+let s:default_start = get(g:,'darkside_default_start','^\s*$\n\zs')
+let s:default_end = get(g:,'darkside_default_end','^\s*$')
+let s:default_inactive = get(g:,'darkside_default_inactive',1)
+"let s:lightside_start = get(g:,'darkside_lightside_start','^\s*$\n\zs')
+"let s:lightside_end = get(g:,'darkside_lightside_end','^\s*$')
 let s:blacklist = get(g:,'darkside_blacklist',[])
 let s:filetypes = get(g:,'darkside_filetypes',{})
 let s:groups = get(g:,'darkside_groups',{})
@@ -41,7 +44,7 @@ function! s:gray_ansi(col)
 endfunction
 
 function! s:validate(coeff)
-	let coeff = a:coeff < 0 ? s:darkside_coeff : a:coeff
+	let coeff = a:coeff < 0 ? s:default_coeff : a:coeff
 	if coeff < 0 || coeff > 1
 		return 0
 	endif
@@ -100,6 +103,7 @@ endfunction
 function! s:getpos()
 	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
 	let start =  searchpos(s:lightside_start, 'cbW')
+	call setpos('.', pos)
 	let end = searchpos(s:lightside_end, 'W')
 	call setpos('.', pos)
 	return [start[0], start[1],end[0],end[1]]
@@ -147,7 +151,7 @@ endfunction
 
 function! s:createHighlight()
 	try
-		call s:createGroup(s:darkside_coeff)
+		call s:createGroup(s:default_coeff)
 	catch
 		call s:stop()
 		return s:error(v:exception)
@@ -156,14 +160,16 @@ endfunction
 
 function s:applySettings()
 	if has_key(s:filetypes,&ft)
-		let s:lightside_start =  s:filetypes[&ft]['lightside_start']
-		let s:lightside_end =  s:filetypes[&ft]['lightside_end']
+		let s:lightside_start =  has_key(s:filetypes[&ft],'lightside_start') ? s:filetypes[&ft]['lightside_start'] : s:default_start
+		let s:lightside_end =  has_key(s:filetypes[&ft],'lightside_end') ? s:filetypes[&ft]['lightside_end'] : s:default_end
+		let s:inactive = has_key(s:filetypes[&ft],'inactive') ? s:filetypes[&ft]['inactive'] : s:default_inactive
 	" Not sure about this else ...
 	else
 		for key in keys(s:groups)
-			if index(s:groups[key]['filetype'],&ft)>=0
-				let s:lightside_start =  s:groups[key]['lightside_start']
-				let s:lightside_end =  s:groups[key]['lightside_end']
+			if index(s:groups[key]['filetypes'],&ft)>=0
+				let s:lightside_start =  has_key(s:groups[key],'lightside_start') ? s:groups[key]['lightside_start'] : s:default_start
+				let s:lightside_end =  has_key(s:groups[key],'lightside_end') ? s:groups[key]['lightside_end'] : s:default_end
+				let s:inactive =  has_key(s:groups[key],'inactive') ? s:groups[key]['inactive'] : s:default_inactive
 			endif
 		endfor
 	endif
@@ -177,13 +183,12 @@ function! s:start()
 	:	autocmd CursorMoved,CursorMovedI * call s:highlighting()
 	:	autocmd ColorScheme * call s:createHighlight()
 	:augroup END
-	" FIXME: We cannot safely remove this group once Darkside started
 	:augroup darkside_win_event
 	:	autocmd!
-	:	autocmd WinEnter * call s:reset()
-	:	" FIXME: TermEnter is trigger when running fzf, but WinEnter too
+	:	autocmd BufEnter * call s:reset()
+	:	" FIXME: TermEnter is trigger when running fzf, but BufEnter too
 	:	autocmd TermEnter * call s:stop()
-	:	autocmd WinLeave * call s:graying(line('$'),0,0,0)
+	:	autocmd BufLeave * if s:inactive | call s:graying(line('$'),0,0,0) | endif
 	:augroup END
 	doautocmd CursorMoved
 endfunction
@@ -199,6 +204,10 @@ function! s:stop()
 	:	autocmd!
 	:augroup END
 	augroup! darkside
+	:augroup darkside_win-event
+	:	autocmd!
+	:augroup END
+	augroup! darkside_win-event
 	unlet! w:selection w:darkside_match_ids
 endfunction
 
