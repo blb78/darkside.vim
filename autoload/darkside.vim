@@ -4,15 +4,15 @@ endif
 
 let g:loaded_darkside = 1
 let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
+
 let s:default_coeff = get(g:,'darkside_coeff', 0.7)
-let s:default_start = get(g:,'darkside_default_start','^\s*$\n\zs')
-let s:default_end = get(g:,'darkside_default_end','^\s*$')
-let s:default_inactive = get(g:,'darkside_default_inactive',1)
-"let s:lightside_start = get(g:,'darkside_lightside_start','^\s*$\n\zs')
-"let s:lightside_end = get(g:,'darkside_lightside_end','^\s*$')
+let s:default_boundary_start = get(g:,'darkside_default_boundary_start','')
+let s:default_boundary_end = get(g:,'darkside_default_boundary_end','')
+" let s:default_inactive = get(g:,'darkside_default_inactive',1)
+
 let s:blacklist = get(g:,'darkside_blacklist',[])
-let s:filetypes = get(g:,'darkside_filetypes',{})
 let s:groups = get(g:,'darkside_groups',{})
+let s:filetypes = get(g:,'darkside_filetypes',{})
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -102,15 +102,19 @@ endfunction
 
 function! s:getpos()
 	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
-	let start =  searchpos(s:lightside_start, 'cbW')
+	let start =  searchpos(s:pattern_start, 'cbW')
 	call setpos('.', pos)
-	let end = searchpos(s:lightside_end, 'W')
+	let end = searchpos(s:pattern_end, 'W')
 	call setpos('.', pos)
 	return [start[0], start[1],end[0],end[1]]
 endfunction
 
 function! s:empty(line)
 	return (a:line =~# '^\s*$')
+endfunction
+
+function s:boundaryFree()
+	return empty(s:pattern_start) && empty(s:pattern_end) ? 1 : 0
 endfunction
 
 function! s:clear_hl()
@@ -120,8 +124,7 @@ function! s:clear_hl()
 endfunction
 
 function! s:highlighting()
-	if index(s:blacklist,&ft)>=0
-		call s:clear_hl()
+	if s:boundaryFree()
 		return
 	endif
 	if !exists('w:selection')
@@ -159,23 +162,25 @@ function! s:createHighlight()
 endfunction
 
 function s:applySettings()
+	" let s:inactive = get(g:,'useful_inactive',1)
+	let s:pattern_start = s:default_boundary_start
+	let s:pattern_end = s:default_boundary_end
+	for key in keys(s:groups)
+		if index(s:groups[key]['filetypes'],&ft)>=0
+			let s:pattern_start =  has_key(s:groups[key],'boundary_start') ? s:groups[key]['boundary_start'] : s:default_boundary_start
+			let s:pattern_end =  has_key(s:groups[key],'boundary_end') ? s:groups[key]['boundary_end'] : s:default_boundary_end
+			" let s:inactive =  has_key(s:groups[key],'inactive') ? s:groups[key]['inactive'] : s:default_inactive
+		endif
+	endfor
 	if has_key(s:filetypes,&ft)
-		let s:lightside_start =  has_key(s:filetypes[&ft],'lightside_start') ? s:filetypes[&ft]['lightside_start'] : s:default_start
-		let s:lightside_end =  has_key(s:filetypes[&ft],'lightside_end') ? s:filetypes[&ft]['lightside_end'] : s:default_end
-		let s:inactive = has_key(s:filetypes[&ft],'inactive') ? s:filetypes[&ft]['inactive'] : s:default_inactive
-	" Not sure about this else ...
-	else
-		for key in keys(s:groups)
-			if index(s:groups[key]['filetypes'],&ft)>=0
-				let s:lightside_start =  has_key(s:groups[key],'lightside_start') ? s:groups[key]['lightside_start'] : s:default_start
-				let s:lightside_end =  has_key(s:groups[key],'lightside_end') ? s:groups[key]['lightside_end'] : s:default_end
-				let s:inactive =  has_key(s:groups[key],'inactive') ? s:groups[key]['inactive'] : s:default_inactive
-			endif
-		endfor
+		let s:pattern_start =  has_key(s:filetypes[&ft],'boundary_start') ? s:filetypes[&ft]['boundary_start'] : s:default_boundary_start
+		let s:pattern_end =  has_key(s:filetypes[&ft],'boundary_end') ? s:filetypes[&ft]['boundary_end'] : s:default_boundary_end
+		" let s:inactive = has_key(s:filetypes[&ft],'inactive') ? s:filetypes[&ft]['inactive'] : s:default_inactive
 	endif
 endfunction
 
 function! s:start()
+	call s:clear_hl()
 	call s:applySettings()
 	call s:createHighlight()
 	:augroup darkside
@@ -185,10 +190,11 @@ function! s:start()
 	:augroup END
 	:augroup darkside_win_event
 	:	autocmd!
-	:	autocmd BufEnter * call s:reset()
+	:	autocmd WinEnter * call s:reset()
 	:	" FIXME: TermEnter is trigger when running fzf, but BufEnter too
 	:	autocmd TermEnter * call s:stop()
-	:	autocmd BufLeave * if s:inactive | call s:graying(line('$'),0,0,0) | endif
+	:	autocmd TermLeave * call s:start()
+	:	autocmd WinLeave * call s:graying(line('$')+1,0,0,0)
 	:augroup END
 	doautocmd CursorMoved
 endfunction
