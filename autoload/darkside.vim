@@ -3,9 +3,9 @@ if exists('g:loaded_darkside')
 endif
 
 let g:loaded_darkside = 1
-let s:invalid_coefficient = 'Invalid coefficient. Expected: 0.0 ~ 1.0'
+let s:invalid_opacity = 'Invalid opacity. Expected: 0.0 ~ 1.0'
 
-let s:default_coeff = get(g:,'darkside_coeff', 0.7)
+let s:default_opacity = get(g:,'darkside_opacity', 0.3)
 let s:default_boundary_start = get(g:,'darkside_default_boundary_start','')
 let s:default_boundary_end = get(g:,'darkside_default_boundary_end','')
 " let s:default_inactive = get(g:,'darkside_default_inactive',1)
@@ -18,9 +18,9 @@ let s:cpo_save = &cpo
 set cpo&vim
 
 
-function! s:hex2rgb(str)
+function! s:hex2RGB(str)
 	let str = substitute(a:str, '^#', '', '')
-	return [eval('0x'.str[0:1]), eval('0x'.str[2:3]), eval('0x'.str[4:5])]
+	return {'r':eval('0x'.str[0:1]), 'g':eval('0x'.str[2:3]),'b': eval('0x'.str[4:5])}
 endfunction
 
 let s:gray_converter = {
@@ -43,9 +43,9 @@ function! s:gray_ansi(col)
 	return a:col == 231 ? 0 : (a:col == 256 ? 231 : a:col)
 endfunction
 
-function! s:validate(coeff)
-	let coeff = a:coeff < 0 ? s:default_coeff : a:coeff
-	if coeff < 0 || coeff > 1
+function! s:validate(opacity)
+	let opacity = a:opacity < 0 ? s:default_opacity : a:opacity
+	if opacity < 0 || opacity > 1
 		return 0
 	endif
 	return 1
@@ -57,38 +57,38 @@ function! s:error(msg)
 	echohl None
 endfunction
 
-function! s:createGroup(coeff)
+function! s:createGroup(opacity)
 	let synid = synIDtrans(hlID('Normal'))
-	let fg = synIDattr(synid, 'fg#')
+	let fg = get(g:,'darkside_foreground',synIDattr(synid, 'fg#'))
+	" let fg = synIDattr(synid, 'fg#')
 	let bg = synIDattr(synid, 'bg#')
-	" call s:prompt(fg.' '.bg)
 
 	if has('gui_running') || has('termguicolors') && &termguicolors || has('nvim') && $NVIM_TUI_ENABLE_TRUE_COLOR
-		if a:coeff < 0 && exists('g:darkside_conceal_guifg')
+		if a:opacity < 0 && exists('g:darkside_conceal_guifg')
 			let dim = g:darkside_conceal_guifg
 		elseif empty(fg) || empty(bg)
 			throw s:unsupported()
 		else
-			if !s:validate(a:coeff)| throw 'Invalid g:darkside_coefficient. Expected: 0.0 ~ 1.0' | endif
-			let fg_rgb = s:hex2rgb(fg)
-			let bg_rgb = s:hex2rgb(bg)
+			if !s:validate(a:opacity)| throw 'Invalid g:darkside_opacity. Expected: 0.0 ~ 1.0' | endif
+			let fg_rgb = s:hex2RGB(fg)
+			let bg_rgb = s:hex2RGB(bg)
 			let dim_rgb = [
-						\ bg_rgb[0] * a:coeff + fg_rgb[0] * (1 - a:coeff),
-						\ bg_rgb[1] * a:coeff + fg_rgb[1] * (1 - a:coeff),
-						\ bg_rgb[2] * a:coeff + fg_rgb[2] * (1 - a:coeff)]
+						\(1.0 - a:opacity) * bg_rgb.r + a:opacity * fg_rgb.r ,
+						\(1.0 - a:opacity) * bg_rgb.g + a:opacity * fg_rgb.g ,
+						\(1.0 - a:opacity) * bg_rgb.b + a:opacity * fg_rgb.b ]
 			let dim = '#'.join(map(dim_rgb, 'printf("%x", float2nr(v:val))'), '')
 		endif
 		execute printf('hi DarksideDim guifg=%s guisp=bg', dim)
 	elseif &t_Co == 256
-		if a:coeff < 0 && exists('g:darkside_conceal_ctermfg')
+		if a:opacity < 0 && exists('g:darkside_conceal_ctermfg')
 			let dim = g:darkside_conceal_ctermfg
 		elseif fg <= -1 || bg <= -1
 			throw s:unsupported()
 		else
-			if !s:validate(a:coeff)| throw 'Invalid g:darkside_coefficient. Expected: 0.0 ~ 1.0' | endif
+			if !s:validate(a:opacity)| throw 'Invalid g:darkside_opacity. Expected: 0.0 ~ 1.0' | endif
 			let fg = s:gray_contiguous(fg)
 			let bg = s:gray_contiguous(bg)
-			let dim = s:gray_ansi(float2nr(bg * a:coeff + fg * (1 - a:coeff)))
+			let dim = s:gray_ansi(float2nr(fg * a:opacity + bg * (1 - a:opacity)))
 		endif
 		if type(dim) == 1
 			execute printf('hi DarksideDim ctermfg=%s', dim)
@@ -154,7 +154,7 @@ endfunction
 
 function! s:createHighlight()
 	try
-		call s:createGroup(s:default_coeff)
+		call s:createGroup(s:default_opacity)
 	catch
 		call s:stop()
 		return s:error(v:exception)
