@@ -59,8 +59,8 @@ endfunction
 
 function! s:createGroup(opacity)
 	let synid = synIDtrans(hlID('Normal'))
+	" FIXME: doesn't work with groups/filetypes settings
 	let fg = get(g:,'darkside_foreground',synIDattr(synid, 'fg#'))
-	" let fg = synIDattr(synid, 'fg#')
 	let bg = synIDattr(synid, 'bg#')
 
 	if has('gui_running') || has('termguicolors') && &termguicolors || has('nvim') && $NVIM_TUI_ENABLE_TRUE_COLOR
