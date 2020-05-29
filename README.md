@@ -20,9 +20,9 @@ let g:useless_opacity = 0.3
 
 ```
 
-### Stay focus on paragraph
+### Stay focus on block
 
-If you want to narrow the useful informations, as just visualize a paragraph, you have to set patterns in order to define where start and end an useful paragraph:
+If you want to narrowing useful informations block, as just visualize a paragraph, you have to set patterns in order to define where start and end an useful block:
 
 ```vim
 
@@ -87,5 +87,7 @@ let g:useful_filetypes = {'go':{'boundary_start':'^\w.*$','boundary_end':'\(^.$\
 
 ```
 
-TODO:
+### TODO
+
 - write and adapt code for useless_foreground
+- create test
