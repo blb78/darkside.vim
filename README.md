@@ -91,3 +91,4 @@ let g:useful_filetypes = {'go':{'boundary_start':'^\w.*$','boundary_end':'\(^.$\
 
 - write and adapt code for useless_foreground
 - create test
+- add example for useless_foreground based on filetype, for nerds who change colorsheme
