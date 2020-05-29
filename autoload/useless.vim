@@ -217,7 +217,7 @@ function! s:stop()
 	unlet! w:selection w:useless_match_ids
 endfunction
 
-function! darkside#execute(bang)
+function! useless#execute(bang)
 	if a:bang
 		call s:stop()
 	else
