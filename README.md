@@ -1,6 +1,6 @@
 # Useless.vim
 
-Stay focus on useful informations by hidden useless.
+Stay focus on useful informations by hiding useless.
 
 This is a fork of [Limelight.vim](https://github.com/junegunn/limelight.vim).
 My goal is to adapt his philosophy, using highlight, to my needs.
@@ -47,7 +47,8 @@ let g:useful_filetypes = {'go':{'boundary_start':'^\w.*$','boundary_end':'\(^.$\
 
 ### Groups
 
-You'll not define patterns for each  filetype that you are using. But you can define groups and apply patterns for a list of filetypes.
+You'll not define patterns for each filetype that you are using. But you can define groups and apply patterns for a list of filetypes.
+I need a group which defines useful informations on paragraph, basically patterns for sentences.
 
 
 ```vim
@@ -56,7 +57,7 @@ let g:useless_opacity = 0.3
 let g:useful_default_boundary_start = '^\s*$\n\zs'
 let g:useful_default_boundary_end = '^\s*$'
 let g:useful_groups = {
-			\'prose':{
+			\'sentence':{
 			\	'filetypes':['markdown','tex'],
 			\	'boundary_start':'\(\([.!?#>-]\s\)\@<=.\|\(^\t\)\@<=\w\|^[A-Z0-9]\)',
 			\	'boundary_end':'\(\([.!?]\s\)\@=\|\(\n$\)\@=\)'},
@@ -73,11 +74,11 @@ let g:useless_opacity = 0.3
 let g:useful_default_boundary_start = '^\s*$\n\zs'
 let g:useful_default_boundary_end = '^\s*$'
 let g:useful_groups = {
-			\'prose':{
+			\'sentence':{
 			\	'filetypes':['markdown','tex'],
 			\	'boundary_start':'\(\([.!?#>-]\s\)\@<=.\|\(^\t\)\@<=\w\|^[A-Z0-9]\)',
 			\	'boundary_end':'\(\([.!?]\s\)\@=\|\(\n$\)\@=\)'},
-			\'basic_usage' : {
+			\'basic' : {
 			\	'filetypes':['make','yaml'],
 			\	'boundary_start':'',
 			\	'boundary_end':''},
@@ -85,3 +86,6 @@ let g:useful_groups = {
 let g:useful_filetypes = {'go':{'boundary_start':'^\w.*$','boundary_end':'\(^.$\|func.*{.*}$\)'}}
 
 ```
+
+TODO:
+- write and adapt code for useless_foreground
