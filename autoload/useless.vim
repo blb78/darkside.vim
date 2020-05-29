@@ -1,18 +1,18 @@
-if exists('g:loaded_darkside')
+if exists('g:loaded_useless')
 	finish
 endif
 
-let g:loaded_darkside = 1
+let g:loaded_useless = 1
 let s:invalid_opacity = 'Invalid opacity. Expected: 0.0 ~ 1.0'
 
-let s:default_opacity = get(g:,'darkside_opacity', 0.3)
-let s:default_boundary_start = get(g:,'darkside_default_boundary_start','')
-let s:default_boundary_end = get(g:,'darkside_default_boundary_end','')
+let s:default_opacity = get(g:,'useless_opacity', 0.3)
+let s:default_boundary_start = get(g:,'useful_default_boundary_start','')
+let s:default_boundary_end = get(g:,'useful_default_boundary_end','')
 " let s:default_inactive = get(g:,'darkside_default_inactive',1)
 
-let s:blacklist = get(g:,'darkside_blacklist',[])
-let s:groups = get(g:,'darkside_groups',{})
-let s:filetypes = get(g:,'darkside_filetypes',{})
+let s:blacklist = get(g:,'useless_blacklist',[])
+let s:groups = get(g:,'useful_groups',{})
+let s:filetypes = get(g:,'useful_filetypes',{})
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -60,16 +60,16 @@ endfunction
 function! s:createGroup(opacity)
 	let synid = synIDtrans(hlID('Normal'))
 	" FIXME: doesn't work with groups/filetypes settings
-	let fg = get(g:,'darkside_foreground',synIDattr(synid, 'fg#'))
+	let fg = get(g:,'useless_foreground',synIDattr(synid, 'fg#'))
 	let bg = synIDattr(synid, 'bg#')
 
 	if has('gui_running') || has('termguicolors') && &termguicolors || has('nvim') && $NVIM_TUI_ENABLE_TRUE_COLOR
-		if a:opacity < 0 && exists('g:darkside_conceal_guifg')
-			let dim = g:darkside_conceal_guifg
+		if a:opacity < 0 && exists('g:useless_conceal_guifg')
+			let dim = g:useless_conceal_guifg
 		elseif empty(fg) || empty(bg)
 			throw s:unsupported()
 		else
-			if !s:validate(a:opacity)| throw 'Invalid g:darkside_opacity. Expected: 0.0 ~ 1.0' | endif
+			if !s:validate(a:opacity)| throw 'Invalid g:useless_opacity. Expected: 0.0 ~ 1.0' | endif
 			let fg_rgb = s:hex2RGB(fg)
 			let bg_rgb = s:hex2RGB(bg)
 			let dim_rgb = [
@@ -80,12 +80,12 @@ function! s:createGroup(opacity)
 		endif
 		execute printf('hi DarksideDim guifg=%s guisp=bg', dim)
 	elseif &t_Co == 256
-		if a:opacity < 0 && exists('g:darkside_conceal_ctermfg')
-			let dim = g:darkside_conceal_ctermfg
+		if a:opacity < 0 && exists('g:useless_conceal_ctermfg')
+			let dim = g:useless_conceal_ctermfg
 		elseif fg <= -1 || bg <= -1
 			throw s:unsupported()
 		else
-			if !s:validate(a:opacity)| throw 'Invalid g:darkside_opacity. Expected: 0.0 ~ 1.0' | endif
+			if !s:validate(a:opacity)| throw 'Invalid g:useless_opacity. Expected: 0.0 ~ 1.0' | endif
 			let fg = s:gray_contiguous(fg)
 			let bg = s:gray_contiguous(bg)
 			let dim = s:gray_ansi(float2nr(fg * a:opacity + bg * (1 - a:opacity)))
@@ -118,8 +118,8 @@ function s:boundaryFree()
 endfunction
 
 function! s:clear_hl()
-	while exists('w:darkside_match_ids') && !empty(w:darkside_match_ids)
-		silent! call matchdelete(remove(w:darkside_match_ids, -1))
+	while exists('w:useless_match_ids') && !empty(w:useless_match_ids)
+		silent! call matchdelete(remove(w:useless_match_ids, -1))
 	endwhile
 endfunction
 
@@ -131,24 +131,24 @@ function! s:highlighting()
 		let w:selection = [0, 0, 0, 0]
 	endif
 
-	let paragraph = s:getpos()
-	if paragraph ==# w:selection
+	let useful = s:getpos()
+	if useful ==# w:selection
 		return
 	endif
 
 	call s:clear_hl()
-	call call('s:graying', paragraph)
-	let w:selection = paragraph
+	call call('s:graying', useful)
+	let w:selection = useful
 endfunction
 
 function! s:graying(start_lnum,start_col,end_lnum,end_col)
-	let w:darkside_match_ids = get(w:, 'darkside_match_ids', [])
-	let priority = get(g:, 'darkside_priority', 10)
-	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%<'.a:start_lnum .'l', priority))
-	call add(w:darkside_match_ids, matchadd('DarksideDim', '\%'.a:start_lnum .'l\%<'.a:start_col.'c', priority))
+	let w:useless_match_ids = get(w:, 'useless_match_ids', [])
+	let priority = get(g:, 'useless_priority', 10)
+	call add(w:useless_match_ids, matchadd('DarksideDim', '\%<'.a:start_lnum .'l', priority))
+	call add(w:useless_match_ids, matchadd('DarksideDim', '\%'.a:start_lnum .'l\%<'.a:start_col.'c', priority))
 	if a:end_lnum > 0
-		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%>'.a:end_lnum.'l', priority))
-		call add(w:darkside_match_ids, matchadd('DarksideDim', '\%'.a:end_lnum.'l\%>'.a:end_col.'c', priority))
+		call add(w:useless_match_ids, matchadd('DarksideDim', '\%>'.a:end_lnum.'l', priority))
+		call add(w:useless_match_ids, matchadd('DarksideDim', '\%'.a:end_lnum.'l\%>'.a:end_col.'c', priority))
 	endif
 endfunction
 
@@ -183,12 +183,12 @@ function! s:start()
 	call s:clear_hl()
 	call s:applySettings()
 	call s:createHighlight()
-	:augroup darkside
+	:augroup useless
 	:	autocmd!
 	:	autocmd CursorMoved,CursorMovedI * call s:highlighting()
 	:	autocmd ColorScheme * call s:createHighlight()
 	:augroup END
-	:augroup darkside_win_event
+	:augroup useless_win_event
 	:	autocmd!
 	:	autocmd WinEnter * call s:reset()
 	:	" FIXME: TermEnter is trigger when running fzf, but BufEnter too
@@ -206,15 +206,15 @@ endfunction
 
 function! s:stop()
 	call s:clear_hl()
-	:augroup darkside
+	:augroup useless
 	:	autocmd!
 	:augroup END
-	augroup! darkside
-	:augroup darkside_win-event
+	augroup! useless
+	:augroup useless_win-event
 	:	autocmd!
 	:augroup END
-	augroup! darkside_win-event
-	unlet! w:selection w:darkside_match_ids
+	augroup! useless_win-event
+	unlet! w:selection w:useless_match_ids
 endfunction
 
 function! darkside#execute(bang)

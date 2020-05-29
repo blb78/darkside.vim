@@ -21,6 +21,6 @@
 " OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 " WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-command! -bang  Darkside call darkside#execute(<bang>0)
+command! -bang  Useless call useless#execute(<bang>0)
 
-nnoremap <silent> <Plug>(Darkside) :Darkside<CR>
+nnoremap <silent> <Plug>(Useless) :Useless<CR>
