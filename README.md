@@ -90,6 +90,10 @@ let g:useful_filetypes = {'go':{'boundary_start':'^\w.*$','boundary_end':'\(^.$\
 
 ### TODO
 
+- add priority settings rank
+	1- Filetypes
+	2- Groups
+	3- Default
 - write and adapt code for useless_foreground
 - create test
 - add example for useless_foreground based on filetype, for nerds who change colorsheme
