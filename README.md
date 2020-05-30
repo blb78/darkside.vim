@@ -101,3 +101,4 @@ let g:useful_filetypes = {'go':{'boundary_start':'^\w.*$','boundary_end':'\(^.$\
 * [ ] add a gif for each example
 * [ ] add a gif which show how test pattern
 * [ ] improve patterns for markdown
+* [ ] Feature for keep useful when leaving buffer
