@@ -4,6 +4,7 @@ Stay focus on useful informations by hiding useless.
 
 This is a fork of [Limelight.vim](https://github.com/junegunn/limelight.vim).
 My goal is to adapt his philosophy, using highlight, to my needs.
+This _plugin_ is suitable for an utilisation with `fzf`. I don't care about `nerdtree`, `vim vinegar` or others...
 
 ## Usage
 
@@ -95,3 +96,4 @@ let g:useful_filetypes = {'go':{'boundary_start':'^\w.*$','boundary_end':'\(^.$\
 - add links for vim pattern, in order to know that they are different from `PCRE`
 - add a gif for each example
 - add a gif which show how test pattern
+- improve patterns for markdown
