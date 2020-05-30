@@ -7,7 +7,6 @@ let s:invalid_opacity = 'Invalid opacity. Expected: 0.0 ~ 1.0'
 
 let s:default_opacity = get(g:,'useless_opacity', 0.3)
 let s:default_foreground = get(g:,'useless_foreground', synIDattr(synIDtrans(hlID('Normal')), 'fg#'))
-let s:default_background = get(g:,'useless_background', synIDattr(synIDtrans(hlID('Normal')), 'bg#'))
 let s:default_boundary_start = get(g:,'useful_boundary_start','')
 let s:default_boundary_end = get(g:,'useful_boundary_end','')
 " let s:default_inactive = get(g:,'darkside_default_inactive',1)
@@ -59,6 +58,7 @@ function! s:error(msg)
 endfunction
 
 function! s:createGroup(opacity)
+	let s:background = synIDattr(synIDtrans(hlID('Normal')), 'bg#')
 	if has('gui_running') || has('termguicolors') && &termguicolors || has('nvim') && $NVIM_TUI_ENABLE_TRUE_COLOR
 		if a:opacity < 0 && exists('g:useless_conceal_guifg')
 			let dim = g:useless_conceal_guifg
@@ -133,11 +133,11 @@ function! s:highlighting()
 	endif
 
 	call s:clear_hl()
-	call call('s:graying', useful)
+	call call('s:grayingAround', useful)
 	let w:selection = useful
 endfunction
 
-function! s:graying(start_lnum,start_col,end_lnum,end_col)
+function! s:grayingAround(start_lnum,start_col,end_lnum,end_col)
 	let w:useless_match_ids = get(w:, 'useless_match_ids', [])
 	let priority = get(g:, 'useless_priority', 10)
 	call add(w:useless_match_ids, matchadd('UselessDim', '\%<'.a:start_lnum .'l', priority))
@@ -160,7 +160,6 @@ endfunction
 function! s:applySettings()
 	" let s:inactive = get(g:,'useful_inactive',1)
 	let s:foreground = s:default_foreground
-	let s:background = s:default_background
 	let s:pattern_start = s:default_boundary_start
 	let s:pattern_end = s:default_boundary_end
 	for key in keys(s:groups)
@@ -168,7 +167,6 @@ function! s:applySettings()
 			let s:pattern_start =  has_key(s:groups[key],'boundary_start') ? s:groups[key]['boundary_start'] : s:default_boundary_start
 			let s:pattern_end =  has_key(s:groups[key],'boundary_end') ? s:groups[key]['boundary_end'] : s:default_boundary_end
 			let s:foreground = has_key(s:groups[key],'useless_foreground') ? s:groups[key]['useless_foreground'] : s:default_foreground
-			let s:background = has_key(s:groups[key],'useless_background') ? s:groups[key]['useless_background'] : s:default_background
 			" let s:inactive =  has_key(s:groups[key],'inactive') ? s:groups[key]['inactive'] : s:default_inactive
 		endif
 	endfor
@@ -176,7 +174,6 @@ function! s:applySettings()
 		let s:pattern_start =  has_key(s:filetypes[&ft],'boundary_start') ? s:filetypes[&ft]['boundary_start'] : s:default_boundary_start
 		let s:pattern_end =  has_key(s:filetypes[&ft],'boundary_end') ? s:filetypes[&ft]['boundary_end'] : s:default_boundary_end
 		let s:foreground = has_key(s:filetypes[&ft],'useless_foreground') ? s:filetypes[&ft]['useless_foreground'] : s:default_foreground
-		let s:background = has_key(s:filetypes[&ft],'useless_background') ? s:filetypes[&ft]['useless_background'] : s:default_background
 		" let s:inactive = has_key(s:filetypes[&ft],'inactive') ? s:filetypes[&ft]['inactive'] : s:default_inactive
 	endif
 endfunction
