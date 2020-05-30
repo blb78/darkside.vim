@@ -94,12 +94,12 @@ Groups patterns can be override by filetypes patterns. Filtypes patterns can't b
 
 ### TODO
 
+* [ ] create test
 * [x] add priority settings rank
 	1. Filetypes
 	2. Groups
 	3. Default
 * [ ] write and adapt code for useless_foreground
-* [ ] create test
 * [ ] add example for useless_foreground based on filetype, for nerds who change colorsheme
 * [ ] add links for vim pattern, in order to know that they are different from `PCRE`
 * [ ] add a gif for each example

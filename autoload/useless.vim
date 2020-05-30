@@ -6,11 +6,12 @@ let g:loaded_useless = 1
 let s:invalid_opacity = 'Invalid opacity. Expected: 0.0 ~ 1.0'
 
 let s:default_opacity = get(g:,'useless_opacity', 0.3)
-let s:default_boundary_start = get(g:,'useful_default_boundary_start','')
-let s:default_boundary_end = get(g:,'useful_default_boundary_end','')
+let s:default_foreground = get(g:,'useless_foreground', synIDattr(synIDtrans(hlID('Normal')), 'fg#'))
+let s:default_background = get(g:,'useless_background', synIDattr(synIDtrans(hlID('Normal')), 'bg#'))
+let s:default_boundary_start = get(g:,'useful_boundary_start','')
+let s:default_boundary_end = get(g:,'useful_boundary_end','')
 " let s:default_inactive = get(g:,'darkside_default_inactive',1)
 
-let s:blacklist = get(g:,'useless_blacklist',[])
 let s:groups = get(g:,'useful_groups',{})
 let s:filetypes = get(g:,'useful_filetypes',{})
 
@@ -58,42 +59,37 @@ function! s:error(msg)
 endfunction
 
 function! s:createGroup(opacity)
-	let synid = synIDtrans(hlID('Normal'))
-	" FIXME: doesn't work with groups/filetypes settings
-	let fg = get(g:,'useless_foreground',synIDattr(synid, 'fg#'))
-	let bg = synIDattr(synid, 'bg#')
-
 	if has('gui_running') || has('termguicolors') && &termguicolors || has('nvim') && $NVIM_TUI_ENABLE_TRUE_COLOR
 		if a:opacity < 0 && exists('g:useless_conceal_guifg')
 			let dim = g:useless_conceal_guifg
-		elseif empty(fg) || empty(bg)
+		elseif empty(s:foreground) || empty(s:background)
 			throw s:unsupported()
 		else
 			if !s:validate(a:opacity)| throw 'Invalid g:useless_opacity. Expected: 0.0 ~ 1.0' | endif
-			let fg_rgb = s:hex2RGB(fg)
-			let bg_rgb = s:hex2RGB(bg)
+			let fg_rgb = s:hex2RGB(s:foreground)
+			let bg_rgb = s:hex2RGB(s:background)
 			let dim_rgb = [
 						\(1.0 - a:opacity) * bg_rgb.r + a:opacity * fg_rgb.r ,
 						\(1.0 - a:opacity) * bg_rgb.g + a:opacity * fg_rgb.g ,
 						\(1.0 - a:opacity) * bg_rgb.b + a:opacity * fg_rgb.b ]
 			let dim = '#'.join(map(dim_rgb, 'printf("%x", float2nr(v:val))'), '')
 		endif
-		execute printf('hi DarksideDim guifg=%s guisp=bg', dim)
+		execute printf('hi UselessDim guifg=%s guisp=bg', dim)
 	elseif &t_Co == 256
 		if a:opacity < 0 && exists('g:useless_conceal_ctermfg')
 			let dim = g:useless_conceal_ctermfg
-		elseif fg <= -1 || bg <= -1
+		elseif s:foreground <= -1 || s:background <= -1
 			throw s:unsupported()
 		else
 			if !s:validate(a:opacity)| throw 'Invalid g:useless_opacity. Expected: 0.0 ~ 1.0' | endif
-			let fg = s:gray_contiguous(fg)
-			let bg = s:gray_contiguous(bg)
+			let fg = s:gray_contiguous(s:foreground)
+			let bg = s:gray_contiguous(s:background)
 			let dim = s:gray_ansi(float2nr(fg * a:opacity + bg * (1 - a:opacity)))
 		endif
 		if type(dim) == 1
-			execute printf('hi DarksideDim ctermfg=%s', dim)
+			execute printf('hi UselessDim ctermfg=%s', dim)
 		else
-			execute printf('hi DarksideDim ctermfg=%d', dim)
+			execute printf('hi UselessDim ctermfg=%d', dim)
 		endif
 	else
 		throw 'Unsupported terminal. Sorry.'
@@ -113,7 +109,7 @@ function! s:empty(line)
 	return (a:line =~# '^\s*$')
 endfunction
 
-function s:boundaryFree()
+function! s:boundaryFree()
 	return empty(s:pattern_start) && empty(s:pattern_end) ? 1 : 0
 endfunction
 
@@ -144,11 +140,11 @@ endfunction
 function! s:graying(start_lnum,start_col,end_lnum,end_col)
 	let w:useless_match_ids = get(w:, 'useless_match_ids', [])
 	let priority = get(g:, 'useless_priority', 10)
-	call add(w:useless_match_ids, matchadd('DarksideDim', '\%<'.a:start_lnum .'l', priority))
-	call add(w:useless_match_ids, matchadd('DarksideDim', '\%'.a:start_lnum .'l\%<'.a:start_col.'c', priority))
+	call add(w:useless_match_ids, matchadd('UselessDim', '\%<'.a:start_lnum .'l', priority))
+	call add(w:useless_match_ids, matchadd('UselessDim', '\%'.a:start_lnum .'l\%<'.a:start_col.'c', priority))
 	if a:end_lnum > 0
-		call add(w:useless_match_ids, matchadd('DarksideDim', '\%>'.a:end_lnum.'l', priority))
-		call add(w:useless_match_ids, matchadd('DarksideDim', '\%'.a:end_lnum.'l\%>'.a:end_col.'c', priority))
+		call add(w:useless_match_ids, matchadd('UselessDim', '\%>'.a:end_lnum.'l', priority))
+		call add(w:useless_match_ids, matchadd('UselessDim', '\%'.a:end_lnum.'l\%>'.a:end_col.'c', priority))
 	endif
 endfunction
 
@@ -161,20 +157,26 @@ function! s:createHighlight()
 	endtry
 endfunction
 
-function s:applySettings()
+function! s:applySettings()
 	" let s:inactive = get(g:,'useful_inactive',1)
+	let s:foreground = s:default_foreground
+	let s:background = s:default_background
 	let s:pattern_start = s:default_boundary_start
 	let s:pattern_end = s:default_boundary_end
 	for key in keys(s:groups)
 		if index(s:groups[key]['filetypes'],&ft)>=0
 			let s:pattern_start =  has_key(s:groups[key],'boundary_start') ? s:groups[key]['boundary_start'] : s:default_boundary_start
 			let s:pattern_end =  has_key(s:groups[key],'boundary_end') ? s:groups[key]['boundary_end'] : s:default_boundary_end
+			let s:foreground = has_key(s:groups[key],'useless_foreground') ? s:groups[key]['useless_foreground'] : s:default_foreground
+			let s:background = has_key(s:groups[key],'useless_background') ? s:groups[key]['useless_background'] : s:default_background
 			" let s:inactive =  has_key(s:groups[key],'inactive') ? s:groups[key]['inactive'] : s:default_inactive
 		endif
 	endfor
 	if has_key(s:filetypes,&ft)
 		let s:pattern_start =  has_key(s:filetypes[&ft],'boundary_start') ? s:filetypes[&ft]['boundary_start'] : s:default_boundary_start
 		let s:pattern_end =  has_key(s:filetypes[&ft],'boundary_end') ? s:filetypes[&ft]['boundary_end'] : s:default_boundary_end
+		let s:foreground = has_key(s:filetypes[&ft],'useless_foreground') ? s:filetypes[&ft]['useless_foreground'] : s:default_foreground
+		let s:background = has_key(s:filetypes[&ft],'useless_background') ? s:filetypes[&ft]['useless_background'] : s:default_background
 		" let s:inactive = has_key(s:filetypes[&ft],'inactive') ? s:filetypes[&ft]['inactive'] : s:default_inactive
 	endif
 endfunction
@@ -230,5 +232,6 @@ function! s:prompt(string)
 	let name = input('Enter name: '.a:string)
 	call inputrestore()
 endfunction
+
 let &cpo = s:cpo_save
 unlet s:cpo_save
