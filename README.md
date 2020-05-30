@@ -88,9 +88,13 @@ let g:useful_filetypes = {'go':{'boundary_start':'^\w.*$','boundary_end':'\(^.$\
 
 ```
 
+### Overriding patterns
+There is rank priority in patterns definition. Default patterns can be override by groups patterns and filetypes patterns.
+Groups patterns can be override by filetypes patterns. Filtypes patterns can't be override.
+
 ### TODO
 
-* [ ] add priority settings rank
+* [x] add priority settings rank
 	1. Filetypes
 	2. Groups
 	3. Default
