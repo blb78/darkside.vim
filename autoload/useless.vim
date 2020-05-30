@@ -212,10 +212,10 @@ function! s:stop()
 	:	autocmd!
 	:augroup END
 	augroup! useless
-	:augroup useless_win_event
-	:	autocmd!
-	:augroup END
-	augroup! useless_win_event
+	":augroup useless_win_event
+	":	autocmd!
+	":augroup END
+	"augroup! useless_win_event
 	unlet! w:selection w:useless_match_ids
 endfunction
 
