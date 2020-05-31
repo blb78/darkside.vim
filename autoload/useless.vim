@@ -18,6 +18,49 @@ let s:cpo_save = &cpo
 set cpo&vim
 
 
+
+function! s:usefulBlock()
+	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
+	let start =  searchpos(s:pattern_start, 'cbW')
+	call setpos('.', pos)
+	let end = searchpos(s:pattern_end, 'W')
+	call setpos('.', pos)
+	return [start[0], start[1],end[0],end[1]]
+endfunction
+
+function! s:uselessAround(start_lnum,start_col,end_lnum,end_col)
+	let w:useless_match_ids = get(w:, 'useless_match_ids', [])
+	let priority = get(g:, 'useless_priority', 10)
+	call add(w:useless_match_ids, matchadd('UselessDim', '\%<'.a:start_lnum .'l', priority))
+	call add(w:useless_match_ids, matchadd('UselessDim', '\%'.a:start_lnum .'l\%<'.a:start_col.'c', priority))
+	if a:end_lnum > 0
+		call add(w:useless_match_ids, matchadd('UselessDim', '\%>'.a:end_lnum.'l', priority))
+		call add(w:useless_match_ids, matchadd('UselessDim', '\%'.a:end_lnum.'l\%>'.a:end_col.'c', priority))
+	endif
+endfunction
+
+function! s:boundaryFree()
+	return empty(s:pattern_start) && empty(s:pattern_end) ? 1 : 0
+endfunction
+
+function! s:highlighting()
+	if s:boundaryFree()
+		return
+	endif
+	if !exists('w:selection')
+		let w:selection = [0, 0, 0, 0]
+	endif
+
+	let useful = s:usefulBlock()
+	if useful ==# w:selection
+		return
+	endif
+
+	call s:clear_hl()
+	call call('s:uselessAround', useful)
+	let w:selection = useful
+endfunction
+
 function! s:hex2RGB(str)
 	let str = substitute(a:str, '^#', '', '')
 	return {'r':eval('0x'.str[0:1]), 'g':eval('0x'.str[2:3]),'b': eval('0x'.str[4:5])}
@@ -96,58 +139,6 @@ function! s:createGroup(opacity)
 	endif
 endfunction
 
-function! s:getpos()
-	let pos = exists('*getcurpos')? getcurpos() : getpos('.')
-	let start =  searchpos(s:pattern_start, 'cbW')
-	call setpos('.', pos)
-	let end = searchpos(s:pattern_end, 'W')
-	call setpos('.', pos)
-	return [start[0], start[1],end[0],end[1]]
-endfunction
-
-function! s:empty(line)
-	return (a:line =~# '^\s*$')
-endfunction
-
-function! s:boundaryFree()
-	return empty(s:pattern_start) && empty(s:pattern_end) ? 1 : 0
-endfunction
-
-function! s:clear_hl()
-	while exists('w:useless_match_ids') && !empty(w:useless_match_ids)
-		silent! call matchdelete(remove(w:useless_match_ids, -1))
-	endwhile
-endfunction
-
-function! s:highlighting()
-	if s:boundaryFree()
-		return
-	endif
-	if !exists('w:selection')
-		let w:selection = [0, 0, 0, 0]
-	endif
-
-	let useful = s:getpos()
-	if useful ==# w:selection
-		return
-	endif
-
-	call s:clear_hl()
-	call call('s:grayingAround', useful)
-	let w:selection = useful
-endfunction
-
-function! s:grayingAround(start_lnum,start_col,end_lnum,end_col)
-	let w:useless_match_ids = get(w:, 'useless_match_ids', [])
-	let priority = get(g:, 'useless_priority', 10)
-	call add(w:useless_match_ids, matchadd('UselessDim', '\%<'.a:start_lnum .'l', priority))
-	call add(w:useless_match_ids, matchadd('UselessDim', '\%'.a:start_lnum .'l\%<'.a:start_col.'c', priority))
-	if a:end_lnum > 0
-		call add(w:useless_match_ids, matchadd('UselessDim', '\%>'.a:end_lnum.'l', priority))
-		call add(w:useless_match_ids, matchadd('UselessDim', '\%'.a:end_lnum.'l\%>'.a:end_col.'c', priority))
-	endif
-endfunction
-
 function! s:createHighlight()
 	try
 		call s:createGroup(s:default_opacity)
@@ -178,24 +169,10 @@ function! s:applySettings()
 	endif
 endfunction
 
-function! s:start()
-	call s:clear_hl()
-	call s:applySettings()
-	call s:createHighlight()
-	:augroup useless
-	:	autocmd!
-	:	autocmd CursorMoved,CursorMovedI * call s:highlighting()
-	:	autocmd ColorScheme * call s:createHighlight()
-	:augroup END
-	:augroup useless_win_event
-	:	autocmd!
-	:	autocmd WinEnter * call s:reset()
-	:	" FIXME: TermEnter is trigger when running fzf, but BufEnter too
-	:	autocmd TermEnter * call s:stop()
-	:	autocmd TermLeave * call s:start()
-	:	autocmd WinLeave * call s:graying(line('$')+1,0,0,0)
-	:augroup END
-	doautocmd CursorMoved
+function! s:clear_hl()
+	while exists('w:useless_match_ids') && !empty(w:useless_match_ids)
+		silent! call matchdelete(remove(w:useless_match_ids, -1))
+	endwhile
 endfunction
 
 function! s:reset()
@@ -214,6 +191,26 @@ function! s:stop()
 	":augroup END
 	"augroup! useless_win_event
 	unlet! w:selection w:useless_match_ids
+endfunction
+
+function! s:start()
+	call s:clear_hl()
+	call s:applySettings()
+	call s:createHighlight()
+	:augroup useless
+	:	autocmd!
+	:	autocmd CursorMoved,CursorMovedI * call s:highlighting()
+	:	autocmd ColorScheme * call s:createHighlight()
+	:augroup END
+	:augroup useless_win_event
+	:	autocmd!
+	:	autocmd WinEnter * call s:reset()
+	:	" FIXME: TermEnter is trigger when running fzf, but BufEnter too
+	:	autocmd TermEnter * call s:stop()
+	:	autocmd TermLeave * call s:start()
+	:	autocmd WinLeave * call s:uselessAround(line('$')+1,0,0,0)
+	:augroup END
+	doautocmd CursorMoved
 endfunction
 
 function! useless#execute(bang)
