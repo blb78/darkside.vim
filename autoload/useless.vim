@@ -47,16 +47,16 @@ function! s:highlighting()
 	if s:boundaryFree()
 		return
 	endif
-	if !exists('w:selection')
-		let w:selection = [0, 0, 0, 0]
-	endif
+	" if !exists('w:selection')
+	" 	let w:selection = [0, 0, 0, 0]
+	" endif
 
 	let useful = s:usefulBlock()
 	if useful ==# w:selection
 		return
 	endif
 
-	call s:clear_hl()
+	call s:clearHL()
 	call call('s:uselessAround', useful)
 	let w:selection = useful
 endfunction
@@ -153,6 +153,7 @@ function! s:applySettings()
 	let s:foreground = s:default_foreground
 	let s:pattern_start = s:default_boundary_start
 	let s:pattern_end = s:default_boundary_end
+	let w:selection = [0, 0, 0, 0]
 	for key in keys(s:groups)
 		if index(s:groups[key]['filetypes'],&ft)>=0
 			let s:pattern_start =  has_key(s:groups[key],'boundary_start') ? s:groups[key]['boundary_start'] : s:default_boundary_start
@@ -169,7 +170,7 @@ function! s:applySettings()
 	endif
 endfunction
 
-function! s:clear_hl()
+function! s:clearHL()
 	while exists('w:useless_match_ids') && !empty(w:useless_match_ids)
 		silent! call matchdelete(remove(w:useless_match_ids, -1))
 	endwhile
@@ -181,7 +182,7 @@ function! s:reset()
 endfunction
 
 function! s:stop()
-	call s:clear_hl()
+	call s:clearHL()
 	:augroup useless
 	:	autocmd!
 	:augroup END
@@ -194,7 +195,7 @@ function! s:stop()
 endfunction
 
 function! s:start()
-	call s:clear_hl()
+	call s:clearHL()
 	call s:applySettings()
 	call s:createHighlight()
 	:augroup useless
