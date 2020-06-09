@@ -47,9 +47,6 @@ function! s:highlighting()
 	if s:boundaryFree()
 		return
 	endif
-	" if !exists('w:selection')
-	" 	let w:selection = [0, 0, 0, 0]
-	" endif
 
 	let useful = s:usefulBlock()
 	if useful ==# w:selection
