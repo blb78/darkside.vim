@@ -18,6 +18,22 @@ let s:cpo_save = &cpo
 set cpo&vim
 
 
+function! s:hl_func()
+	let current = bufname(expand('%:p'))
+	let target = substitute(current,"_test","","")
+	let winnr = bufwinnr(target)
+	if winnr ==# -1 || current ==# target | return | endif
+	if has('nvim')
+		call s:updatePosition()
+	else
+	endif
+	"call win_execute(winnr,'call winrestview({"col": 10, "lnum": 10})')
+	call nvim_win_set_cursor(win_getid(winnr),[10,10])
+
+	"let buffers = map(copy(getbufinfo()), 'v:val.name')
+	"call s:prompt(string(buffers))
+endfunction
+
 function! s:onLeaving()
 	if s:stay_useful
 		return
@@ -62,6 +78,8 @@ function! s:highlighting()
 	call s:clearHL()
 	call call('s:uselessAround', useful)
 	let w:selection = useful
+	if !empty(s:hl_tested_func) | call s:hl_func() | endif
+	"call s:hl_func()
 endfunction
 
 function! s:hex2RGB(str)
@@ -162,14 +180,16 @@ function! s:applySettings()
 			let s:pattern_start =  has_key(s:groups[key],'boundary_start') ? s:groups[key]['boundary_start'] : s:default_boundary_start
 			let s:pattern_end =  has_key(s:groups[key],'boundary_end') ? s:groups[key]['boundary_end'] : s:default_boundary_end
 			let s:foreground = has_key(s:groups[key],'useless_foreground') ? s:groups[key]['useless_foreground'] : s:default_foreground
-			let s:stay_useful =  has_key(s:groups[key],'on_leaving') ? s:groups[key]['on_leaving'] : s:default_stay_useful
+			let s:stay_useful =  has_key(s:groups[key],'stay_useful') ? s:groups[key]['stay_useful'] : s:default_stay_useful
+			let s:hl_tested_func = has_key(s:groups[key],'hl_tested_func') ? s:groups[key]['hl_tested_func'] : ''
 		endif
 	endfor
 	if has_key(s:filetypes,&ft)
 		let s:pattern_start =  has_key(s:filetypes[&ft],'boundary_start') ? s:filetypes[&ft]['boundary_start'] : s:default_boundary_start
 		let s:pattern_end =  has_key(s:filetypes[&ft],'boundary_end') ? s:filetypes[&ft]['boundary_end'] : s:default_boundary_end
 		let s:foreground = has_key(s:filetypes[&ft],'useless_foreground') ? s:filetypes[&ft]['useless_foreground'] : s:default_foreground
-		let s:stay_useful = has_key(s:filetypes[&ft],'on_leaving') ? s:filetypes[&ft]['on_leaving'] : s:default_stay_useful
+		let s:stay_useful = has_key(s:filetypes[&ft],'stay_useful') ? s:filetypes[&ft]['stay_useful'] : s:default_stay_useful
+		let s:hl_tested_func = has_key(s:filetypes[&ft],'hl_tested_func') ? s:filetypes[&ft]['hl_tested_func'] : ''
 	endif
 endfunction
 
