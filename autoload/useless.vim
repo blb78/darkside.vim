@@ -162,14 +162,14 @@ function! s:applySettings()
 			let s:pattern_start =  has_key(s:groups[key],'boundary_start') ? s:groups[key]['boundary_start'] : s:default_boundary_start
 			let s:pattern_end =  has_key(s:groups[key],'boundary_end') ? s:groups[key]['boundary_end'] : s:default_boundary_end
 			let s:foreground = has_key(s:groups[key],'useless_foreground') ? s:groups[key]['useless_foreground'] : s:default_foreground
-			let s:stay_useful =  has_key(s:groups[key],'on_leaving') ? s:groups[key]['on_leaving'] : s:default_stay_useful
+			let s:stay_useful =  has_key(s:groups[key],'stay_useful') ? s:groups[key]['stay_useful'] : s:default_stay_useful
 		endif
 	endfor
 	if has_key(s:filetypes,&ft)
 		let s:pattern_start =  has_key(s:filetypes[&ft],'boundary_start') ? s:filetypes[&ft]['boundary_start'] : s:default_boundary_start
 		let s:pattern_end =  has_key(s:filetypes[&ft],'boundary_end') ? s:filetypes[&ft]['boundary_end'] : s:default_boundary_end
 		let s:foreground = has_key(s:filetypes[&ft],'useless_foreground') ? s:filetypes[&ft]['useless_foreground'] : s:default_foreground
-		let s:stay_useful = has_key(s:filetypes[&ft],'on_leaving') ? s:filetypes[&ft]['on_leaving'] : s:default_stay_useful
+		let s:stay_useful = has_key(s:filetypes[&ft],'stay_useful') ? s:filetypes[&ft]['stay_useful'] : s:default_stay_useful
 	endif
 endfunction
 
