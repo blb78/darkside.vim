@@ -17,6 +17,9 @@ let s:filetypes = get(g:,'useful_filetypes',{})
 let s:cpo_save = &cpo
 set cpo&vim
 
+function! s:updatePosition(winnr)
+	call nvim_win_set_cursor(win_getid(a:winnr),[10,10])
+endfunction
 
 function! s:hl_func()
 	let current = bufname(expand('%:p'))
@@ -24,14 +27,10 @@ function! s:hl_func()
 	let winnr = bufwinnr(target)
 	if winnr ==# -1 || current ==# target | return | endif
 	if has('nvim')
-		call s:updatePosition()
+		call s:updatePosition(winnr)
 	else
+		"call win_execute(winnr,'call winrestview({"col": 10, "lnum": 10})')
 	endif
-	"call win_execute(winnr,'call winrestview({"col": 10, "lnum": 10})')
-	call nvim_win_set_cursor(win_getid(winnr),[10,10])
-
-	"let buffers = map(copy(getbufinfo()), 'v:val.name')
-	"call s:prompt(string(buffers))
 endfunction
 
 function! s:onLeaving()
