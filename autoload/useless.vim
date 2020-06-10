@@ -9,7 +9,7 @@ let s:default_opacity = get(g:,'useless_opacity', 0.3)
 let s:default_foreground = get(g:,'useless_foreground', synIDattr(synIDtrans(hlID('Normal')), 'fg#'))
 let s:default_boundary_start = get(g:,'useful_boundary_start','')
 let s:default_boundary_end = get(g:,'useful_boundary_end','')
-" let s:default_inactive = get(g:,'darkside_default_inactive',1)
+let s:default_stay_useful = 0
 
 let s:groups = get(g:,'useful_groups',{})
 let s:filetypes = get(g:,'useful_filetypes',{})
@@ -146,7 +146,7 @@ function! s:createHighlight()
 endfunction
 
 function! s:applySettings()
-	" let s:inactive = get(g:,'useful_inactive',1)
+	let s:stay_useful = s:default_stay_useful
 	let s:foreground = s:default_foreground
 	let s:pattern_start = s:default_boundary_start
 	let s:pattern_end = s:default_boundary_end
@@ -206,7 +206,7 @@ function! s:start()
 	:	" FIXME: TermEnter is trigger when running fzf, but BufEnter too
 	:	autocmd TermEnter * call s:stop()
 	:	autocmd TermLeave * call s:start()
-	:	autocmd WinLeave * call s:uselessAround(line('$')+1,0,0,0)
+	:	autocmd WinLeave * call s:onLeaving()
 	:augroup END
 	doautocmd CursorMoved
 endfunction
