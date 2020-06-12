@@ -17,8 +17,14 @@ let s:filetypes = get(g:,'useful_filetypes',{})
 let s:cpo_save = &cpo
 set cpo&vim
 
-function! s:updatePosition(winnr)
-	call nvim_win_set_cursor(win_getid(a:winnr),[10,10])
+function! s:updatePosition(winnr,target)
+	"let l:pos = execute("vimgrep /^func.*Page/j ".a:target)
+	let result = split(system("rg -n '^func.*Page' ".a:target),':')
+	if len(result)>0
+		call nvim_win_set_cursor(win_getid(a:winnr),[str2nr(result[0]),0])
+		" bufdo[bufnr(target)] execute('doautocmd CursorMoved')
+		" execute ('windo doautocmd CursorMoved')
+	endif
 endfunction
 
 function! s:hl_func()
@@ -27,7 +33,7 @@ function! s:hl_func()
 	let winnr = bufwinnr(target)
 	if winnr ==# -1 || current ==# target | return | endif
 	if has('nvim')
-		call s:updatePosition(winnr)
+		call s:updatePosition(winnr,target)
 	else
 		"call win_execute(winnr,'call winrestview({"col": 10, "lnum": 10})')
 	endif
@@ -78,7 +84,6 @@ function! s:highlighting()
 	call call('s:uselessAround', useful)
 	let w:selection = useful
 	if !empty(s:hl_tested_func) | call s:hl_func() | endif
-	"call s:hl_func()
 endfunction
 
 function! s:hex2RGB(str)
