@@ -10,17 +10,10 @@ This _plugin_ is suitable for an utilisation with `fzf`.
 
 - `Useless`.
 
-### Stay focus on buffer
+## Default
 
 ![](useless-windows.gif)
-For stay focus on your active buffer, you just have to run `Useless` without any necessary settings.
-Or maybe you can play with opacity.
-
-```vim
-" default 0.5
-let g:useless_opacity = 0.3
-
-```
+Stay focused on useful window.
 
 ### Stay focus on block
 
@@ -92,6 +85,14 @@ let g:useful_filetypes = {'go':{'boundary_start':'^\w.*$','boundary_end':'\(^.$\
 ### Overriding patterns
 There is rank priority in patterns definition. Default patterns can be override by groups patterns and filetypes patterns.
 Groups patterns can be override by filetypes patterns. Filtypes patterns can't be override.
+
+## Options
+
+```vim
+" default 0.5
+let g:useless_opacity = 0.3
+
+```
 
 ### TODO
 
