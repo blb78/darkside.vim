@@ -4,7 +4,7 @@ Stay focus on useful informations by hiding useless.
 
 This is a fork of [Limelight.vim](https://github.com/junegunn/limelight.vim).
 My goal is to adapt his philosophy, using highlight, to my needs.
-This _plugin_ is suitable for an utilisation with `fzf`. I don't care about `nerdtree`, `vim vinegar` or others...
+This _plugin_ is suitable for an utilisation with `fzf`.
 
 ## Usage
 
@@ -12,6 +12,7 @@ This _plugin_ is suitable for an utilisation with `fzf`. I don't care about `ner
 
 ### Stay focus on buffer
 
+[](useless-windows.gif)
 For stay focus on your active buffer, you just have to run `Useless` without any necessary settings.
 Or maybe you can play with opacity.
 
@@ -99,10 +100,12 @@ Groups patterns can be override by filetypes patterns. Filtypes patterns can't b
 	1. Filetypes
 	2. Groups
 	3. Default
-* [ ] write and adapt code for useless_foreground
+* [x] write and adapt code for useless_foreground
 * [ ] add example for useless_foreground based on filetype, for nerds who change colorsheme
 * [ ] add links for vim pattern, in order to know that they are different from `PCRE`
 * [ ] add a gif for each example
 * [ ] add a gif which show how test pattern
 * [ ] improve patterns for markdown
-* [ ] Feature for keep useful when leaving buffer
+* [x] Feature for keep useful when leaving buffer
+* [ ] Add Toggle feature
+* [ ] Add HL tested func feature
