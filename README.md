@@ -12,7 +12,7 @@ This _plugin_ is suitable for an utilisation with `fzf`.
 
 ### Stay focus on buffer
 
-[](useless-windows.gif)
+![](useless-windows.gif)
 For stay focus on your active buffer, you just have to run `Useless` without any necessary settings.
 Or maybe you can play with opacity.
 
