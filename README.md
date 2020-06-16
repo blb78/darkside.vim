@@ -12,7 +12,7 @@ This _plugin_ is suitable for an utilisation with `fzf`.
 
 ## Default
 
-![](useless-windows.gif)
+![useless-windows](useless-windows.gif?raw=true)
 Stay focused on useful window.
 
 ### Stay focus on block
