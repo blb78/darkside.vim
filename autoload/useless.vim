@@ -210,8 +210,10 @@ function! s:start()
 	:	autocmd!
 	:	autocmd WinEnter * call s:reset()
 	:	" FIXME: TermEnter is trigger when running fzf, but BufEnter too
-	:	autocmd TermEnter * call s:stop()
-	:	autocmd TermLeave * call s:start()
+	:	if has('nvim')
+	:		autocmd TermEnter * call s:stop()
+	:		autocmd TermLeave * call s:start()
+	:	endif
 	:	autocmd WinLeave * call s:onLeaving()
 	:augroup END
 	doautocmd CursorMoved
