@@ -11,14 +11,12 @@ This _plugin_ is suitable for an utilisation with `fzf`.
 - `Useless`.
 
 ## Default
-
-![useless-windows](../media/useless-windows.gif?raw=true)
 Stay focused on useful window.
+![useless-windows](../media/useless-windows.gif?raw=true)
 
-### Useful block
-
-![useful-block](../media/useful-block.gif?raw=true)
+## Useful block
 If you want to narrowing useful informations block, as just visualize a paragraph, you have to set patterns in order to define where start and end an useful block:
+![useful-block](../media/useful-block.gif?raw=true)
 
 ```vim
 
