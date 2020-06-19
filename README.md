@@ -27,7 +27,7 @@ let g:useful_default_boundary_end = '^\s*$'
 
 ### Filetypes
 
-So, you have set default boundary to display only useful informations. But for your Go files, default patterns are not suitable.
+You can specify patterns based on filetype.
 
 ```vim
 
