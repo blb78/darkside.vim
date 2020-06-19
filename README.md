@@ -20,7 +20,6 @@ This _plugin_ is suitable for an utilisation with `fzf`.
 
 ```vim
 
-let g:useless_opacity = 0.3
 let g:useful_default_boundary_start = '^\s*$\n\zs'
 let g:useful_default_boundary_end = '^\s*$'
 
