@@ -215,8 +215,8 @@ function! s:start()
 	:		autocmd TermEnter * call s:stop()
 	:		autocmd TermLeave * call s:start()
 	:	else
-	:		autocmd BufEnter * call s:reset()
-	:		autocmd BufLeave * call s:onLeaving()
+	:		autocmd WinEnter,BufEnter * call s:reset()
+	:		autocmd WinLeave,BufLeave * call s:onLeaving()
 	:	endif
 	:augroup END
 	doautocmd CursorMoved
